@@ -16,8 +16,40 @@
 #include "clock_config.h"
 #include "fsl_debug_console.h"
 /* TODO: insert other include files here. */
+#include "freertos.h"
 
 /* TODO: insert other definitions and declarations here. */
+
+void setMCGIRClk()
+{
+    // Clear clk
+    MCG->C1 &= ~MCG_C1_CLKS_MASK;
+
+    // Set clock source to LIRC
+    // Set IRCLKEN to enable LIRC
+    MCG->C1 |= ((MCG_C1_CLKS(0b01) | MCG_C1_IRCLKEN_MASK));
+
+    // Set IRCS to choose 8 MHz clock
+    MCG->C2 |= MCG_C2_IRCS_MASK;
+
+    // Set FRCDIV for divisor 1
+    MCG->SC &= ~MCG_SC_FCRDIV_MASK;
+    MCG->SC |= MCG_SC_FCRDIV(0b0);
+
+    // Set LIRC_DIV2 for divisor 1
+    MCG->MC &= ~MCG_MC_LIRC_DIV2_MASK;
+    MCG->MC |= MCG_MC_LIRC_DIV2(0b0);
+}
+
+void Init_Clk()
+{
+    setMCGIRClk();
+
+	//Choose 8MHz MCGIRCLK
+    SIM->SOPT2 &= ~SIM_SOPT2_TPMSRC_MASK;
+    SIM->SOPT2 |= SIM_SOPT2_TPMSRC(0b11);
+}
+
 
 /*
  * @brief   Application entry point.
@@ -33,7 +65,9 @@ int main(void) {
     BOARD_InitDebugConsole();
 #endif
 
+    Init_Clk();
     PRINTF("Hello World\r\n");
+    FreeRTOS_Init();
 
     /* Force the counter to be placed into memory. */
     volatile static int i = 0 ;
