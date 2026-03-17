@@ -1,8 +1,27 @@
 #include "buzzer.h"
 #include <stdio.h>
 #include "board.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
 
-void Buzzer_Init()
+SemaphoreHandle_t buzzerSem;
+
+
+static void buzzerTask(void *arg)
+{
+    (void)arg;
+
+    while(1)
+    {
+    	if (xSemaphoreTake(buzzerSem, portMAX_DELAY) == pdTRUE)
+		{
+			buzzer_toggle();
+		}
+	}
+}
+
+void Buzzer_Init(void)
 {
 	// Turn on clock gating
 	SIM->SCGC5 |= SIM_SCGC5_PORTE_MASK;
@@ -15,20 +34,28 @@ void Buzzer_Init()
     GPIOE->PDDR |= 1 << BUZZER;
 
     // Set off buzzer
+    GPIOE->PCOR |= 1 << BUZZER;
+
+    buzzerSem = xSemaphoreCreateBinary();
+	xTaskCreate(buzzerTask, "buzzer", configMINIMAL_STACK_SIZE+100, NULL, 2, NULL);
+}
+
+void buzzer_on(void)
+{
     GPIOE->PSOR |= 1 << BUZZER;
 }
 
-void buzzer_on()
+void buzzer_off(void)
 {
     GPIOE->PCOR |= 1 << BUZZER;
 }
 
-void buzzer_off()
-{
-    GPIOE->PSOR |= 1 << BUZZER;
-}
-
-void buzzer_toggle()
+void buzzer_toggle(void)
 {
     GPIOE->PTOR |= 1 << BUZZER;
+}
+
+void buzzer_wake(void)
+{
+    xSemaphoreGive(buzzerSem);
 }
