@@ -8,7 +8,9 @@
 
 #include "servo.h"
 
+/* Binary semaphore released by the PORTA ISR when button is pressed. */
 SemaphoreHandle_t buttonSem;
+
 
 static void buttonTask(void *arg)
 {
@@ -20,6 +22,9 @@ static void buttonTask(void *arg)
 	}
 }
 
+/*
+ * Clears the button interrupt flag and notifies button task via semaphore.
+ */
 void Button_PortA_ISR(uint32_t flags, BaseType_t *hpw)
 {
 	if(flags & (1 << SWITCH_PIN))
@@ -30,6 +35,9 @@ void Button_PortA_ISR(uint32_t flags, BaseType_t *hpw)
 }
 
 
+/*
+ * Configures PTA4 button input, interrupt routing, and associated RTOS objects.
+ */
 void Button_Init(void)
 {
     //Disable interrupts
@@ -55,8 +63,7 @@ void Button_Init(void)
 	PORTA->PCR[SWITCH_PIN] &= ~PORT_PCR_IRQC_MASK;
 	PORTA->PCR[SWITCH_PIN] |= PORT_PCR_IRQC(0b1010);
 
-	//Set NVIC priority to 0,
-	//highest priority
+	//Set NVIC priority to 128
 	NVIC_SetPriority(PORTA_IRQn, 128);
 
 	buttonSem = xSemaphoreCreateBinary();

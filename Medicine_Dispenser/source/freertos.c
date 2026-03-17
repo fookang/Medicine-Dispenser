@@ -5,6 +5,10 @@
 #include "button.h"
 #include "servo.h"
 
+/*
+ * Initializes application modules that create FreeRTOS objects/tasks,
+ * then starts the scheduler.
+ */
 void FreeRTOS_Init(void)
 {
     Servo_Init();

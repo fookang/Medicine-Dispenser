@@ -5,6 +5,7 @@
 #include "task.h"
 #include "semphr.h"
 
+/* Binary semaphore used to wake the buzzer task from other contexts. */
 SemaphoreHandle_t buzzerSem;
 
 
@@ -21,6 +22,9 @@ static void buzzerTask(void *arg)
 	}
 }
 
+/* 
+ *Configures buzzer GPIO and creates buzzer task and semaphore.
+ */
 void Buzzer_Init(void)
 {
 	// Turn on clock gating
