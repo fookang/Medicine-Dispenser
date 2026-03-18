@@ -7,6 +7,10 @@
 #include "clock_config.h"
 
 #include "servo.h"
+#include "constant.h"
+#include "uart.h"
+
+#include "fsl_debug_console.h"
 
 /* Binary semaphore released by the PORTA ISR when button is pressed. */
 SemaphoreHandle_t buttonSem;
@@ -18,7 +22,14 @@ static void buttonTask(void *arg)
     while(1)
     {
     	if (xSemaphoreTake(buttonSem, portMAX_DELAY) == pdTRUE)
-    		toggleServo();
+    	{
+			PRINTF("SENDING\r\n");
+    		TPacket pkt = {0};
+			pkt.device_type = HB_SENSOR_DEV;
+			pkt.command = CMD_NONE;
+			snprintf((char*) pkt.data, MAX_DATA_LEN, "%d", 72);
+			uart_send(&pkt);
+    	}
 	}
 }
 
@@ -72,6 +83,5 @@ void Button_Init(void)
 	//Clear pending interrupts and enable interrupts
 	NVIC_ClearPendingIRQ(PORTA_IRQn);
 	NVIC_EnableIRQ(PORTA_IRQn);
-
 }
 
