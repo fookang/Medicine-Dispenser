@@ -1,20 +1,50 @@
 #ifndef __SERVO__
 #define __SERVO__
 
+/**
+ * @brief Servo pin index used for servo output on PORTE.
+ *
+ * Hardware mapping: PTE20 and PTE21.
+ */
 #define SERVO1 20
 #define SERVO2 21
+
+/**
+ * @brief Servo channel index used for TPM1 channels for pwm.
+ */
 #define SERVO1_CHANNEL 0
 #define SERVO2_CHANNEL 1
 
-typedef enum {
+/*
+ * @brief Enum for servo positions.
+ */
+typedef enum
+{
 	OPEN,
 	CLOSE,
 } ServoPosition;
 
+/*
+ * @brief Initializes servo GPIO and PWM handling.
+ *
+ * This function configures PTE20 and PTE21 for TPM1 PWM output,
+ * sets up TPM1 for edge-aligned PWM with a 20 ms period, and initializes the servo to the closed position.
+ */
 void Servo_Init(void);
-void startPWM(void);
-void stopPWM(void);
-void setPWM(ServoPosition pos);
+
+/*
+ * @brief Toggles the servo between open and closed positions.
+ */
 void toggleServo(void);
+
+/*
+ * @brief Sets the servo to the open position.
+ */
+void openServo(void);
+
+/*
+ * @brief Sets the servo to the closed position.
+ */
+void closeServo(void);
 
 #endif

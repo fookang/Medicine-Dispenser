@@ -3,7 +3,20 @@
 #include <stdio.h>
 #include "board.h"
 
+#define OPEN_PWM 2000
+#define CLOSE_PWM 4000
+
 static ServoPosition servoState;
+
+static void startPWM(void)
+{
+	TPM1->SC |= TPM_SC_CMOD(0b1);
+}
+
+static void stopPWM(void)
+{
+	TPM1->SC &= ~TPM_SC_CMOD_MASK;
+}
 
 void Servo_Init(void)
 {
@@ -36,48 +49,66 @@ void Servo_Init(void)
 	// Initialize count to 0
 	TPM1->CNT = 0;
 
-    // 20 ms period:
-    // 8 MHz / 4 = 2 MHz
-    // 2 Mhz / 50 = 40000 counts
+	// 20 ms period:
+	// 8 MHz / 4 = 2 MHz
+	// 2 Mhz / 50 = 40000 counts
 	TPM1->MOD = 39999;
 
-	//Configure TPM0 channels.
-	// MS = 10, ELS = 10
+	// Configure TPM0 channels.
+	//  MS = 10, ELS = 10
 	TPM1->CONTROLS[SERVO1_CHANNEL].CnSC &= ~(TPM_CnSC_MSB_MASK | TPM_CnSC_MSA_MASK | TPM_CnSC_ELSB_MASK | TPM_CnSC_ELSA_MASK);
 	TPM1->CONTROLS[SERVO1_CHANNEL].CnSC |= (TPM_CnSC_MSB(1) | TPM_CnSC_MSA(0) | TPM_CnSC_ELSB(1) | TPM_CnSC_ELSA(0));
 	TPM1->CONTROLS[SERVO2_CHANNEL].CnSC &= ~(TPM_CnSC_MSB_MASK | TPM_CnSC_MSA_MASK | TPM_CnSC_ELSB_MASK | TPM_CnSC_ELSA_MASK);
 	TPM1->CONTROLS[SERVO2_CHANNEL].CnSC |= (TPM_CnSC_MSB(1) | TPM_CnSC_MSA(0) | TPM_CnSC_ELSB(1) | TPM_CnSC_ELSA(0));
 
-	TPM1->CONTROLS[SERVO1_CHANNEL].CnV = 4000;
+	TPM1->CONTROLS[SERVO1_CHANNEL].CnV = CLOSE_PWM;
 	servoState = CLOSE;
 	setPWM(servoState);
 
 	startPWM();
 }
 
-void startPWM(void) {
-    TPM1->SC |= TPM_SC_CMOD(0b1);
-}
-
-void stopPWM(void) {
-    TPM1->SC &= ~TPM_SC_CMOD_MASK;
-}
-
-void setPWM(ServoPosition pos) {
-	switch(pos) {
-	    case(OPEN):
-			TPM1->CONTROLS[SERVO1_CHANNEL].CnV = 2000;
-	    	break;
-	    case(CLOSE):
-			TPM1->CONTROLS[SERVO1_CHANNEL].CnV = 4000;
-	    	break;
-	    default:
-	    	TPM1->CONTROLS[SERVO1_CHANNEL].CnV = 4000;
+/*
+ * @brief Sets the PWM value for the servo based on its position.
+ */
+static void setPWM(ServoPosition pos)
+{
+	switch (pos)
+	{
+	case (OPEN):
+		TPM1->CONTROLS[SERVO1_CHANNEL].CnV = OPEN_PWM;
+		break;
+	case (CLOSE):
+		TPM1->CONTROLS[SERVO1_CHANNEL].CnV = CLOSE_PWM;
+		break;
+	default:
+		TPM1->CONTROLS[SERVO1_CHANNEL].CnV = CLOSE_PWM;
 	}
 }
 
+/*
+ * @brief Toggles the servo between open and closed positions.
+ */
 void toggleServo(void)
 {
-    servoState = (servoState == CLOSE) ? OPEN : CLOSE;
-    setPWM(servoState);
+	servoState = (servoState == CLOSE) ? OPEN : CLOSE;
+	setPWM(servoState);
+}
+
+/*
+ * @brief Opens the servo by setting it to the OPEN position.
+ */
+void openServo(void)
+{
+	servoState = OPEN;
+	setPWM(servoState);
+}
+
+/*
+ * @brief Closes the servo by setting it to the CLOSE position.
+ */
+void closeServo(void)
+{
+	servoState = CLOSE;
+	setPWM(servoState);
 }
