@@ -5,6 +5,7 @@
 #include "button.h"
 #include "servo.h"
 #include "uart.h"
+#include "ultrasonic.h"
 
 /*
  * Initializes application modules that create FreeRTOS objects/tasks,
@@ -16,5 +17,6 @@ void FreeRTOS_Init(void)
     Button_Init();
     Buzzer_Init();
     init_uart();
+    ultrasonic_init();
     vTaskStartScheduler();
 }
