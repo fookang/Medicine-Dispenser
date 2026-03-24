@@ -1,15 +1,29 @@
 #include "board.h"
 #include "button.h"
+#include "ultrasonic.h"
 
-void PORTA_IRQHandler(void) {
+void PORTA_IRQHandler(void)
+{
     NVIC_ClearPendingIRQ(PORTA_IRQn);
 
     BaseType_t hpw = pdFALSE;
-	uint32_t flags = PORTA->ISFR;
+    uint32_t flags = PORTA->ISFR;
 
-	// ISR for button interrupt
+    // ISR for button interrupt
     Button_PortA_ISR(flags, &hpw);
 
-	portYIELD_FROM_ISR(hpw);
+    portYIELD_FROM_ISR(hpw);
+}
 
+void PORTC_PORTD_IRQHandler(void)
+{
+    NVIC_ClearPendingIRQ(PORTC_PORTD_IRQn);
+
+    BaseType_t hpw = pdFALSE;
+    uint32_t flags = PORTC->ISFR;
+
+    // ISR for ultrasonic echo pin interrupt
+    Ultrasonic_PORTC_IRQHandler(flags, &hpw);
+
+    portYIELD_FROM_ISR(hpw);
 }
