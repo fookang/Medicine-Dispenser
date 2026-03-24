@@ -4,9 +4,9 @@
 /**
  * @brief GPIO pin index used for buzzer output on PORTE.
  *
- * Hardware mapping: PTE21.
+ * Hardware mapping: PTE0.
  */
-#define BUZZER 21
+#define BUZZER 0
 
 /**
  * @brief Initializes buzzer GPIO, creates buzzer task and semaphore.
