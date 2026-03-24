@@ -9,6 +9,7 @@
 
 #include "uart.h"
 #include "constant.h"
+#include "buzzer.h"
 
 #include "fsl_debug_console.h"
 
@@ -17,18 +18,26 @@ static volatile uint8_t tx_busy = 0;
 uint8_t send_buffer[sizeof(TPacket)];
 uint8_t recv_buffer[sizeof(TPacket)];
 
-#define QLEN	5
+#define QLEN 5
 
 QueueHandle_t rec_queue;
 QueueHandle_t send_queue;
 SemaphoreHandle_t txDoneSem;
 
-void uart_send(const TPacket *packet) {
+/*
+ * Sends a packet of data over UART2.
+ * This function is exported for use by other modules.
+ */
+void uart_send(const TPacket *packet)
+{
 	xQueueSend(send_queue, (void *)packet, portMAX_DELAY);
 }
 
-
-static void sendPacket(const TPacket *packet) {
+/*
+ * Sends a packet of data over UART2.
+ */
+static void sendPacket(const TPacket *packet)
+{
 	memcpy(send_buffer, packet, sizeof(TPacket));
 
 	// Enable the TIE interrupt
@@ -38,46 +47,72 @@ static void sendPacket(const TPacket *packet) {
 	UART2->C2 |= UART_C2_TE_MASK;
 }
 
-static void sendTask(void *arg) {
+/*
+ * Task for sending UART data.
+ */
+static void sendTask(void *arg)
+{
 	(void)arg;
 
-	while(1) {
+	while (1)
+	{
 		TPacket packet;
-		if(xQueueReceive(send_queue, &packet, portMAX_DELAY) == pdTRUE) {
+		if (xQueueReceive(send_queue, &packet, portMAX_DELAY) == pdTRUE)
+		{
 			sendPacket(&packet);
-            xSemaphoreTake(txDoneSem, portMAX_DELAY);
+			xSemaphoreTake(txDoneSem, portMAX_DELAY);
 		}
 	}
 }
 
+/*
+ * Task for receiving UART data.
+ * Parse received packets and perform actions based on the device type and command.
+ */
+static void recvTask(void *arg)
+{
+	(void)arg;
 
-static void recvTask(void *arg) {
-    (void)arg;
-
-    while (1) {
-        TPacket packet;
-        if (xQueueReceive(rec_queue, &packet, portMAX_DELAY) == pdTRUE) {
-            PRINTF("Received packet:\r\n");
-            PRINTF("  device_type = %u\r\n", packet.device_type);
-            PRINTF("  command     = %u\r\n", packet.command);
-            PRINTF("  data        = %s\r\n", packet.data);
-        }
-    }
+	while (1)
+	{
+		TPacket packet;
+		if (xQueueReceive(rec_queue, &packet, portMAX_DELAY) == pdTRUE)
+		{
+			PRINTF("Received packet:\r\n");
+			PRINTF("  device_type = %u\r\n", packet.device_type);
+			PRINTF("  command     = %u\r\n", packet.command);
+			PRINTF("  data        = %s\r\n", packet.data);
+			if (packet.device_type == BUZZER)
+			{
+				if (packet.command == BUZZER_ON)
+				{
+					buzzer_on();
+				}
+				else if (packet.command == BUZZER_OFF)
+				{
+					buzzer_off();
+				}
+			}
+		}
+	}
 }
 
-
+/*
+ * UART2 interrupt handler.
+ */
 void UART2_FLEXIO_IRQHandler(void)
 {
 	// Send and receive pointers
-	static int recv_ptr=0, send_ptr=0;
+	static int recv_ptr = 0, send_ptr = 0;
 
 	NVIC_ClearPendingIRQ(UART2_FLEXIO_IRQn);
-	if(UART2->S1 & UART_S1_TDRE_MASK) // Send data
+	if (UART2->S1 & UART_S1_TDRE_MASK) // Send data
 	{
-		if(send_ptr >= sizeof(TPacket)) {
-            BaseType_t hpw = pdFALSE;
+		if (send_ptr >= sizeof(TPacket))
+		{
+			BaseType_t hpw = pdFALSE;
 
-            send_ptr = 0;
+			send_ptr = 0;
 
 			// Disable the transmit interrupt
 			UART2->C2 &= ~UART_C2_TIE_MASK;
@@ -86,20 +121,22 @@ void UART2_FLEXIO_IRQHandler(void)
 			UART2->C2 &= ~UART_C2_TE_MASK;
 
 			xSemaphoreGiveFromISR(txDoneSem, &hpw);
-            portYIELD_FROM_ISR(hpw);
+			portYIELD_FROM_ISR(hpw);
 		}
-		else {
+		else
+		{
 			UART2->D = send_buffer[send_ptr++];
 		}
 	}
 
-	if(UART2->S1 & UART_S1_RDRF_MASK)
+	if (UART2->S1 & UART_S1_RDRF_MASK)
 	{
 		// Read Data to buffer
 		uint8_t rx_data = UART2->D;
 		recv_buffer[recv_ptr++] = rx_data;
 
-		if(recv_ptr >= sizeof(TPacket)) {
+		if (recv_ptr >= sizeof(TPacket))
+		{
 			TPacket packet;
 			BaseType_t hpw = pdFALSE;
 
@@ -112,18 +149,24 @@ void UART2_FLEXIO_IRQHandler(void)
 	}
 }
 
+/*
+ * Initializes the UART2 peripheral.
+ * Sets baud rate to 9600, configures Tx on PTE22 and Rx on PTE23.
+ * Set up interrupts and semaphores for sending and receiving data.
+ * Creates FreeRTOS tasks for handling sending and receiving of UART data.
+ */
 void init_uart()
 {
 	NVIC_DisableIRQ(UART2_FLEXIO_IRQn);
 
-	//enable clock to UART2 and PORTE
+	// enable clock to UART2 and PORTE
 	SIM->SCGC4 |= SIM_SCGC4_UART2_MASK;
 	SIM->SCGC5 |= SIM_SCGC5_PORTE_MASK;
 
-	//Ensure Tx and Rx are disabled before configuration
+	// Ensure Tx and Rx are disabled before configuration
 	UART2->C2 &= ~((UART_C2_TE_MASK) | (UART_C2_RE_MASK));
 
-	//connect UART pins for PTE22, PTE23
+	// connect UART pins for PTE22, PTE23
 	PORTE->PCR[UART_TX] &= ~PORT_PCR_MUX_MASK;
 	PORTE->PCR[UART_TX] |= PORT_PCR_MUX(4);
 
@@ -140,7 +183,7 @@ void init_uart()
 	// MUST SET BDH FIRST!
 	UART2->BDH &= ~UART_BDH_SBR_MASK;
 	UART2->BDH |= ((sbr >> 8) & UART_BDH_SBR_MASK);
-	UART2->BDL = (uint8_t) (sbr &0xFF);
+	UART2->BDL = (uint8_t)(sbr & 0xFF);
 
 	// Disable loop mode
 	UART2->C1 &= ~UART_C1_LOOPS_MASK;
@@ -152,7 +195,7 @@ void init_uart()
 	// 8-bit mode
 	UART2->C1 &= ~UART_C1_M_MASK;
 
-	//Enable RX interrupt
+	// Enable RX interrupt
 	UART2->C2 |= UART_C2_RIE_MASK;
 
 	// Enable the receiver
@@ -165,8 +208,8 @@ void init_uart()
 	send_queue = xQueueCreate(QLEN, sizeof(TPacket));
 	txDoneSem = xSemaphoreCreateBinary();
 
-    xTaskCreate(recvTask, "recvTask", configMINIMAL_STACK_SIZE+100, NULL, 2, NULL);
-    xTaskCreate(sendTask, "sendTask", configMINIMAL_STACK_SIZE+100, NULL, 1, NULL);
+	xTaskCreate(recvTask, "recvTask", configMINIMAL_STACK_SIZE + 100, NULL, 2, NULL);
+	xTaskCreate(sendTask, "sendTask", configMINIMAL_STACK_SIZE + 100, NULL, 1, NULL);
 
 	NVIC_EnableIRQ(UART2_FLEXIO_IRQn);
 }
