@@ -4,9 +4,24 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
+#include "timers.h"
+
+#include "fsl_debug_console.h"
+
 
 /* Binary semaphore used to wake the buzzer task from other contexts. */
 SemaphoreHandle_t buzzerSem;
+TimerHandle_t buzzerTimer;
+
+// Set timer of 24H
+static uint32_t BUZZER_PERIOD_MS = 24 * 60 * 60 * 1000;
+
+static void buzzerTimerCallback(TimerHandle_t xTimer)
+{
+    (void)xTimer;
+
+    xSemaphoreGive(buzzerSem);
+}
 
 static void buzzerTask(void *arg)
 {
@@ -16,10 +31,11 @@ static void buzzerTask(void *arg)
     {
         if (xSemaphoreTake(buzzerSem, portMAX_DELAY) == pdTRUE)
         {
-            buzzer_toggle();
+            buzzer_on();
         }
     }
 }
+
 
 /*
  *Configures buzzer GPIO and creates buzzer task and semaphore.
@@ -39,8 +55,23 @@ void Buzzer_Init(void)
     // Set off buzzer
     GPIOE->PCOR |= 1 << BUZZER;
 
+    // Set up Semaphore for buzzer task
     buzzerSem = xSemaphoreCreateBinary();
+
+    // Create buzzer task
     xTaskCreate(buzzerTask, "buzzer", configMINIMAL_STACK_SIZE + 100, NULL, 2, NULL);
+
+    // Create buzzer timer
+    buzzerTimer = xTimerCreate("Timer", pdMS_TO_TICKS(BUZZER_PERIOD_MS), pdTRUE, (void*) 0, buzzerTimerCallback);
+
+    // Check if timer is properly initialised
+    if (buzzerTimer == NULL)
+    {
+    	PRINTF("BUZZER FAILED TO INISTIALISED\n\r");
+    } else
+    {
+        xTimerStart(buzzerTimer, 0);
+    }
 }
 
 /*
@@ -73,4 +104,19 @@ void buzzer_toggle(void)
 void buzzer_wake(void)
 {
     xSemaphoreGive(buzzerSem);
+}
+
+/* Change auto-buzz interval while system is running */
+BaseType_t buzzer_set_period_ms(uint32_t newPeriodMs)
+{
+    if (newPeriodMs == 0 || buzzerTimer == NULL)
+    {
+        return pdFAIL;
+    }
+
+    BUZZER_PERIOD_MS = newPeriodMs;
+
+    return xTimerChangePeriod(buzzerTimer,
+                              pdMS_TO_TICKS(newPeriodMs),
+                              portMAX_DELAY);
 }

@@ -7,7 +7,7 @@ typedef enum {
 	BUZZER_DEV = 0,
 	BUTTON_DEV = 1,
 	HB_SENSOR_DEV = 2,
-	HDT_SENSOR_DEV = 3,
+	DHT_SENSOR_DEV = 3,
 	SERVO_DEV = 4
 } DeviceType;
 
@@ -16,7 +16,8 @@ typedef enum {
 	SERVO_CLOSE = 1,
 	BUZZER_ON = 2,
 	BUZZER_OFF = 3,
-	CMD_NONE = 4
+	BUZZER_CHANGE = 4,
+	CMD_NONE = 5
 } Command;
 
 typedef struct

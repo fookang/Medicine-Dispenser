@@ -1,6 +1,8 @@
 #ifndef __BUZZER__
 #define __BUZZER__
 
+#include "FreeRTOS.h"
+
 /**
  * @brief GPIO pin index used for buzzer output on PORTE.
  *
@@ -32,5 +34,10 @@ void buzzer_toggle(void);
  * @brief Signals the buzzer task to perform its task.
  */
 void buzzer_wake(void);
+
+/**
+ * @brief Change buzzer period
+ */
+BaseType_t buzzer_set_period_ms(uint32_t newPeriodMs);
 
 #endif
