@@ -9,6 +9,7 @@
 #include "servo.h"
 #include "constant.h"
 #include "uart.h"
+#include "buzzer.h"
 
 #include "fsl_debug_console.h"
 
@@ -23,12 +24,13 @@ static void buttonTask(void *arg)
     {
     	if (xSemaphoreTake(buttonSem, portMAX_DELAY) == pdTRUE)
     	{
-			PRINTF("SENDING\r\n");
-    		TPacket pkt = {0};
-			pkt.device_type = HB_SENSOR_DEV;
-			pkt.command = CMD_NONE;
-			snprintf((char*) pkt.data, MAX_DATA_LEN, "%d", 72);
-			uart_send(&pkt);
+//			PRINTF("SENDING\r\n");
+//    		TPacket pkt = {0};
+//			pkt.device_type = HB_SENSOR_DEV;
+//			pkt.command = CMD_NONE;
+//			snprintf((char*) pkt.data, MAX_DATA_LEN, "%d", 72);
+//			uart_send(&pkt);
+    		buzzer_off();
     	}
 	}
 }
