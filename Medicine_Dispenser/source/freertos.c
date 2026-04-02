@@ -6,6 +6,9 @@
 #include "servo.h"
 #include "uart.h"
 #include "ultrasonic.h"
+#include "DHT.h"
+
+#include "fsl_debug_console.h"
 
 /*
  * Initializes application modules that create FreeRTOS objects/tasks,
@@ -18,5 +21,6 @@ void FreeRTOS_Init(void)
     Buzzer_Init();
     init_uart();
     ultrasonic_init();
+    DHT_init();
     vTaskStartScheduler();
 }
