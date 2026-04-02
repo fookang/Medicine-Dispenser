@@ -41,7 +41,7 @@ static void ultrasonic_task(void *arg)
 
         trig_pin_low();
         uint32_t start = TPM0->CNT;
-        while ((uint16_t)(TPM0->CNT - start) < 2)
+        while ((TPM0->CNT - start) < 2)
             ;
 
         start = TPM0->CNT;
@@ -50,7 +50,7 @@ static void ultrasonic_task(void *arg)
         trig_pin_high();
 
         // Wait for 10 microseconds
-        while ((uint16_t)(TPM0->CNT - start) < 10)
+        while ((TPM0->CNT - start) < 10)
             ;
 
         trig_pin_low();
@@ -218,8 +218,6 @@ static void init_echo_pin(void)
 void ultrasonic_init(void)
 {
     ultraSem = xSemaphoreCreateBinary();
-    init_timer();
-    start_timer();
     init_trig_pin();
     init_echo_pin();
     xTaskCreate(ultrasonic_task, "ultrasonic", configMINIMAL_STACK_SIZE + 100, NULL, 2, NULL);

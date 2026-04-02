@@ -25,12 +25,6 @@
 void ultrasonic_init(void);
 
 /*
- * @brief ISR for TPM0 timer overflow interrupt.
- * @param flags Timer status flags.
- */
-void TPM0_Ultrasonic_IRQHandler(uint32_t flags);
-
-/*
  * @brief ISR for PORTC interrupt triggered by ultrasonic sensor echo pin.
  * @param flags Interrupt status flags from PORTC.
  * @param hpw Pointer to higher-priority-task-woken flag used by FreeRTOS ISR APIs.
