@@ -17,6 +17,7 @@
 #include "fsl_debug_console.h"
 /* TODO: insert other include files here. */
 #include "freertos.h"
+#include "timer.h"
 
 /* TODO: insert other definitions and declarations here. */
 
@@ -66,7 +67,8 @@ int main(void) {
 #endif
 
     Init_Clk();
-    PRINTF("Hello World\r\n");
+    SystemCoreClockUpdate();
+    Init_Timer();
     FreeRTOS_Init();
 
     /* Force the counter to be placed into memory. */
