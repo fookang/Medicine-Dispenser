@@ -84,13 +84,22 @@ static void recvTask(void *arg)
 			PRINTF("  data        = %s\r\n", packet.data);
 			if (packet.device_type == BUZZER)
 			{
-				if (packet.command == BUZZER_ON)
+				switch (packet.command)
 				{
+				case BUZZER_ON:
 					buzzer_on();
-				}
-				else if (packet.command == BUZZER_OFF)
-				{
+					break;
+
+				case BUZZER_OFF:
 					buzzer_off();
+					break;
+
+				case BUZZER_CHANGE:
+				{
+					// Convert hours to MS
+					uint32_t time = packet.data[0] * 1000 * 60 * 60;
+					buzzer_set_period_ms(time);
+				}
 				}
 			}
 		}
