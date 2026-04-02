@@ -1,0 +1,50 @@
+#include "timer.h"
+#include "board.h"
+
+/*
+ * Start TIM0 to count microseconds for ultrasonic pulse width measurement and DHT sensor readings.
+ */
+static void start_timer0(void)
+{
+    TPM0->SC |= TPM_SC_CMOD(0b1);
+}
+
+/*
+ * Configures TIM0 with 1us increment.
+ */
+static void init_timer0(void)
+{
+    // Turn on clock gating for TPM0
+    SIM->SCGC6 |= SIM_SCGC6_TPM0_MASK;
+
+    // Set TPM0 to use MCGIRCLK (8 MHz)
+    SIM->SOPT2 &= ~SIM_SOPT2_TPMSRC_MASK;
+    SIM->SOPT2 |= SIM_SOPT2_TPMSRC(0b11);
+
+    // Turn off TPM0 and clear prescaler mask
+    TPM0->SC &= ~TPM_SC_CMOD_MASK;
+    TPM0->SC &= ~TPM_SC_PS_MASK;
+
+    TPM0->CNT = 0;
+
+    // Set TPM0 prescaler
+    TPM0->SC |= TPM_SC_PS(0b011); // Prescaler of 8
+
+    // Set timer of 1us
+    // 8 MHz / 8 = 1 MHz
+    // 1 MHz / 1 us = 1 count
+    // Set modulo
+    TPM0->MOD = 65535;
+}
+
+/*
+ * Initialize the shared microsecond time base.
+ *
+ * Configures and starts TPM0 so modules (for example ultrasonic and DHT)
+ * can use a common 1 us-resolution counter for short timing operations.
+ */
+void Init_Timer(void)
+{
+    init_timer0();
+    start_timer0();
+}
