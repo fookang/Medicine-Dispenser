@@ -13,9 +13,29 @@ static void startPWM(void)
 	TPM1->SC |= TPM_SC_CMOD(0b1);
 }
 
+/*
 static void stopPWM(void)
 {
 	TPM1->SC &= ~TPM_SC_CMOD_MASK;
+}
+*/
+
+/*
+ * @brief Sets the PWM value for the servo based on its position.
+ */
+static void setPWM(ServoPosition pos)
+{
+	switch (pos)
+	{
+	case (OPEN):
+		TPM1->CONTROLS[SERVO1_CHANNEL].CnV = OPEN_PWM;
+		break;
+	case (CLOSE):
+		TPM1->CONTROLS[SERVO1_CHANNEL].CnV = CLOSE_PWM;
+		break;
+	default:
+		TPM1->CONTROLS[SERVO1_CHANNEL].CnV = CLOSE_PWM;
+	}
 }
 
 void Servo_Init(void)
@@ -66,24 +86,6 @@ void Servo_Init(void)
 	setPWM(servoState);
 
 	startPWM();
-}
-
-/*
- * @brief Sets the PWM value for the servo based on its position.
- */
-static void setPWM(ServoPosition pos)
-{
-	switch (pos)
-	{
-	case (OPEN):
-		TPM1->CONTROLS[SERVO1_CHANNEL].CnV = OPEN_PWM;
-		break;
-	case (CLOSE):
-		TPM1->CONTROLS[SERVO1_CHANNEL].CnV = CLOSE_PWM;
-		break;
-	default:
-		TPM1->CONTROLS[SERVO1_CHANNEL].CnV = CLOSE_PWM;
-	}
 }
 
 /*
