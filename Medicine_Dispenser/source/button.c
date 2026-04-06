@@ -30,7 +30,7 @@ static void buttonTask(void *arg)
 //			pkt.command = CMD_NONE;
 //			snprintf((char*) pkt.data, MAX_DATA_LEN, "%d", 72);
 //			uart_send(&pkt);
-    		buzzer_off();
+    		buzzer_stop();
     	}
 	}
 }
@@ -51,7 +51,7 @@ void Button_PortA_ISR(uint32_t flags, BaseType_t *hpw)
 /*
  * Configures PTA4 button input, interrupt routing, and associated RTOS objects.
  */
-void Button_Init(void)
+void Button_Init(int priority)
 {
     //Disable interrupts
     NVIC_DisableIRQ(PORTA_IRQn);

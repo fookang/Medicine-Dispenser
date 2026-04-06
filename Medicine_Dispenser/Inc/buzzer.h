@@ -12,8 +12,9 @@
 
 /**
  * @brief Initializes buzzer GPIO, creates buzzer task and semaphore.
+ * @param priority Priority for the Buzzer task.
  */
-void Buzzer_Init(void);
+void Buzzer_Init(int priority);
 
 /**
  * @brief Drives buzzer output high.
@@ -34,6 +35,11 @@ void buzzer_toggle(void);
  * @brief Signals the buzzer task to perform its task.
  */
 void buzzer_wake(void);
+
+/**
+ * @brief Signals the buzzer task to stop buzzing.
+ */
+void buzzer_stop(void);
 
 /**
  * @brief Change buzzer period

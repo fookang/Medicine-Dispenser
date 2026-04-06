@@ -15,8 +15,11 @@
 
 /*
  * @brief Initializes the UART2 peripheral.
+ *
+ * @param recvPriority  Priority for the UART receive task.
+ * @param sendPriority  Priority for the UART transmit task.
  */
-void init_uart();
+void init_uart(int recvPriority, int sendPriority);
 
 /*
  * @brief Sends a packet of data over UART2.

@@ -202,7 +202,7 @@ static void DHTTask(void *arg)
  * This sets up the data pin and starts the internal FreeRTOS task
  * responsible for periodic sensor reads and alarm reporting.
  */
-void DHT_init(void)
+void DHT_init(int priority)
 {
     // Turn on clock gating
     SIM->SCGC5 |= SIM_SCGC5_PORTD_MASK;
@@ -221,6 +221,6 @@ void DHT_init(void)
     GPIOD->PSOR |= 1 << DHT_PIN;
 
     // Create DHT task
-    xTaskCreate(DHTTask, "DHT", configMINIMAL_STACK_SIZE + 100, NULL, 2, NULL);
+    xTaskCreate(DHTTask, "DHT", configMINIMAL_STACK_SIZE + 100, NULL, priority, NULL);
     PRINTF("DHT11 created\r\n");
 }

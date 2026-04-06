@@ -17,8 +17,10 @@
  * This function configures PTA4 as an input with pull-up, enables
  * falling-edge interrupt generation, creates the button semaphore,
  * and starts the internal button task.
+ *
+ * @param priority Priority for the Button task.
  */
-void Button_Init(void);
+void Button_Init(int priority);
 
 /**
  * @brief Handles PORTA interrupt events for the button input.

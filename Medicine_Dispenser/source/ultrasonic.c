@@ -34,6 +34,8 @@ static void ultrasonic_task(void *arg)
 {
     (void)arg;
 
+    int servoOpen = 0;
+
     while (1)
     {
         echo_start_us = 0;
@@ -72,20 +74,22 @@ static void ultrasonic_task(void *arg)
             // Convert to distance in cm (speed of sound is ~34300 cm/s)
             uint32_t distance_cm = pulse_width_us * 343 / 20000;
 
-            if (distance_cm < 10)
+            if (!servoOpen && distance_cm < 10)
             {
                 openServo();
+                servoOpen = 1;
             }
-            else
+            else if (servoOpen && distance_cm > 15)
             {
                 closeServo();
+                servoOpen = 0;
             }
         }
         else
         {
             closeServo();
         }
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
 
@@ -122,42 +126,6 @@ void Ultrasonic_PORTC_IRQHandler(uint32_t flags, BaseType_t *hpw)
         // Clear interrupt flag
         PORTC->ISFR |= (1 << ECHO_PIN);
     }
-}
-
-/*
- * Start TIM0 to count microseconds for ultrasonic pulse width measurement.
- */
-static void start_timer(void)
-{
-    TPM0->SC |= TPM_SC_CMOD(0b1);
-}
-
-/*
- * Configures TIM0 with 1us increment.
- */
-static void init_timer(void)
-{
-    // Turn on clock gating for TPM0
-    SIM->SCGC6 |= SIM_SCGC6_TPM0_MASK;
-
-    // Set TPM0 to use MCGIRCLK (8 MHz)
-    SIM->SOPT2 &= ~SIM_SOPT2_TPMSRC_MASK;
-    SIM->SOPT2 |= SIM_SOPT2_TPMSRC(0b11);
-
-    // Turn off TPM0 and clear prescaler mask
-    TPM0->SC &= ~TPM_SC_CMOD_MASK;
-    TPM0->SC &= ~TPM_SC_PS_MASK;
-
-    TPM0->CNT = 0;
-
-    // Set TPM0 prescaler
-    TPM0->SC |= TPM_SC_PS(0b011); // Prescaler of 8
-
-    // Set timer of 1us
-    // 8 MHz / 8 = 1 MHz
-    // 1 MHz / 1 us = 1 count
-    // Set modulo
-    TPM0->MOD = 65535;
 }
 
 /*
@@ -215,10 +183,10 @@ static void init_echo_pin(void)
 /*
  *Configures ultrasonic GPIO, TIM0 and creates buzzer task and semaphore.
  */
-void ultrasonic_init(void)
+void ultrasonic_init(int priority)
 {
     ultraSem = xSemaphoreCreateBinary();
     init_trig_pin();
     init_echo_pin();
-    xTaskCreate(ultrasonic_task, "ultrasonic", configMINIMAL_STACK_SIZE + 100, NULL, 2, NULL);
+    xTaskCreate(ultrasonic_task, "ultrasonic", configMINIMAL_STACK_SIZE + 100, NULL, priority, NULL);
 }

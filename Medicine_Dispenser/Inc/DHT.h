@@ -22,7 +22,9 @@ typedef struct
  *
  * This sets up the data pin and starts the internal FreeRTOS task
  * responsible for periodic sensor reads and alarm reporting.
+ *
+ * @param priority Priority for the DHT task.
  */
-void DHT_init(void);
+void DHT_init(int priority);
 
 #endif

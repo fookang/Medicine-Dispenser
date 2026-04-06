@@ -8,6 +8,7 @@
 
 #include "fsl_debug_console.h"
 
+#define buzzerTogglePeriodMs 200
 
 /* Binary semaphore used to wake the buzzer task from other contexts. */
 SemaphoreHandle_t buzzerSem;
@@ -15,6 +16,8 @@ TimerHandle_t buzzerTimer;
 
 // Set timer of 24H
 static uint32_t BUZZER_PERIOD_MS = 24 * 60 * 60 * 1000;
+
+static volatile int buzzerActive = 0;
 
 static void buzzerTimerCallback(TimerHandle_t xTimer)
 {
@@ -31,7 +34,14 @@ static void buzzerTask(void *arg)
     {
         if (xSemaphoreTake(buzzerSem, portMAX_DELAY) == pdTRUE)
         {
-            buzzer_on();
+        	buzzerActive = 1;
+        	while (buzzerActive)
+        	{
+        		buzzer_toggle();
+        		vTaskDelay(pdMS_TO_TICKS(buzzerTogglePeriodMs));
+        	}
+
+        	buzzer_off();
         }
     }
 }
@@ -40,7 +50,7 @@ static void buzzerTask(void *arg)
 /*
  *Configures buzzer GPIO and creates buzzer task and semaphore.
  */
-void Buzzer_Init(void)
+void Buzzer_Init(int priority)
 {
     // Turn on clock gating
     SIM->SCGC5 |= SIM_SCGC5_PORTE_MASK;
@@ -59,7 +69,7 @@ void Buzzer_Init(void)
     buzzerSem = xSemaphoreCreateBinary();
 
     // Create buzzer task
-    xTaskCreate(buzzerTask, "buzzer", configMINIMAL_STACK_SIZE + 100, NULL, 2, NULL);
+    xTaskCreate(buzzerTask, "buzzer", configMINIMAL_STACK_SIZE + 100, NULL, priority, NULL);
 
     // Create buzzer timer
     buzzerTimer = xTimerCreate("Timer", pdMS_TO_TICKS(BUZZER_PERIOD_MS), pdTRUE, (void*) 0, buzzerTimerCallback);
@@ -68,7 +78,8 @@ void Buzzer_Init(void)
     if (buzzerTimer == NULL)
     {
     	PRINTF("BUZZER FAILED TO INISTIALISED\n\r");
-    } else
+    }
+    else
     {
         xTimerStart(buzzerTimer, 0);
     }
@@ -104,6 +115,12 @@ void buzzer_toggle(void)
 void buzzer_wake(void)
 {
     xSemaphoreGive(buzzerSem);
+}
+
+/* Stop continuous buzzing */
+void buzzer_stop(void)
+{
+    buzzerActive = false;
 }
 
 /* Change auto-buzz interval while system is running */

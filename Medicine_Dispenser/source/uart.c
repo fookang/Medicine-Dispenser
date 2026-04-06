@@ -164,7 +164,7 @@ void UART2_FLEXIO_IRQHandler(void)
  * Set up interrupts and semaphores for sending and receiving data.
  * Creates FreeRTOS tasks for handling sending and receiving of UART data.
  */
-void init_uart()
+void init_uart(int recvPriority, int sendPriority)
 {
 	NVIC_DisableIRQ(UART2_FLEXIO_IRQn);
 
@@ -217,8 +217,8 @@ void init_uart()
 	send_queue = xQueueCreate(QLEN, sizeof(TPacket));
 	txDoneSem = xSemaphoreCreateBinary();
 
-	xTaskCreate(recvTask, "recvTask", configMINIMAL_STACK_SIZE + 100, NULL, 2, NULL);
-	xTaskCreate(sendTask, "sendTask", configMINIMAL_STACK_SIZE + 100, NULL, 1, NULL);
+	xTaskCreate(recvTask, "recvTask", configMINIMAL_STACK_SIZE + 100, NULL, recvPriority, NULL);
+	xTaskCreate(sendTask, "sendTask", configMINIMAL_STACK_SIZE + 100, NULL, sendPriority, NULL);
 
 	NVIC_EnableIRQ(UART2_FLEXIO_IRQn);
 }

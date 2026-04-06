@@ -21,8 +21,10 @@
 
 /**
  * @brief Initializes ultrasonic sensor GPIO pins.
+ *
+ * @param priority Priority for the Ultrasonic task.
  */
-void ultrasonic_init(void);
+void ultrasonic_init(int priority);
 
 /*
  * @brief ISR for PORTC interrupt triggered by ultrasonic sensor echo pin.
