@@ -1,0 +1,28 @@
+#ifndef HEARTBEAT_H
+#define HEARTBEAT_H
+
+#include <stdint.h>
+#include "FreeRTOS.h"
+
+/*
+ * @brief Initializes the heartbeat module.
+ *
+ * @param priority Task priority for heartbeat processing.
+ */
+void Heartbeat_Init(int priority);
+
+/*
+ * @brief Notify the heartbeat module that a beat was detected.
+ *
+ * Call this when the button is pressed.
+ */
+void Heartbeat_BeatDetected(void);
+
+/*
+ * @brief Get the latest calculated BPM.
+ *
+ * @return Latest BPM value.
+ */
+uint32_t Heartbeat_GetBPM(void);
+
+#endif

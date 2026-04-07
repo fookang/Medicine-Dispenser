@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chips chipVendor="NXP"
+       family="MCXC444"
+       vendorURL="http://www.nxp.com"
+       chipURL="">
+   <chip name="MCXC444"
+         displayName="MCXC444"
+         xml_file="MCXC444_internal.xml"
+         chipURL=""/>
+</chips>

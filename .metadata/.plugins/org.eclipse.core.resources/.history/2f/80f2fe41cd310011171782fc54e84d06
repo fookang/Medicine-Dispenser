@@ -1,0 +1,228 @@
+#include "ultrasonic.h"
+#include "board.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "semphr.h"
+
+#include "servo.h"
+#include "fsl_debug_console.h"
+
+/*
+ *
+ */
+
+static volatile uint32_t echo_start_us = 0;
+static volatile uint32_t echo_end_us = 0;
+
+static SemaphoreHandle_t ultraSem;
+
+static void trig_pin_high(void)
+{
+    GPIOC->PSOR |= 1 << TRIG_PIN;
+}
+
+static void trig_pin_low(void)
+{
+    GPIOC->PCOR |= 1 << TRIG_PIN;
+}
+
+/*
+ * Task to trigger ultrasonic sensor and calculate distance based on echo pulse width.
+ */
+static void ultrasonic_task(void *arg)
+{
+    (void)arg;
+
+    int servoOpen = 0;
+
+    while (1)
+    {
+        echo_start_us = 0;
+        echo_end_us = 0;
+
+        trig_pin_low();
+        uint32_t start = TPM0->CNT;
+        while ((TPM0->CNT - start) < 2)
+            ;
+
+        start = TPM0->CNT;
+
+        // Trigger the ultrasonic sensor
+        trig_pin_high();
+
+        // Wait for 10 microseconds
+        while ((TPM0->CNT - start) < 10)
+            ;
+
+        trig_pin_low();
+
+        // Wait for the echo measurement to complete
+        if (xSemaphoreTake(ultraSem, pdMS_TO_TICKS(100)) == pdTRUE)
+        {
+            // Calculate pulse width in microseconds
+            uint32_t pulse_width_us;
+            if (echo_end_us >= echo_start_us)
+            {
+                pulse_width_us = echo_end_us - echo_start_us;
+            }
+            else
+            {
+                pulse_width_us = (65536 - echo_start_us) + echo_end_us;
+            }
+
+            // Convert to distance in cm (speed of sound is ~34300 cm/s)
+            uint32_t distance_cm = pulse_width_us * 343 / 20000;
+
+            if (!servoOpen && distance_cm < 10)
+            {
+                openServo();
+                servoOpen = 1;
+            }
+            else if (servoOpen && distance_cm > 15)
+            {
+                closeServo();
+                servoOpen = 0;
+            }
+        }
+        else
+        {
+            closeServo();
+        }
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+}
+
+/*
+ * Interrupt handler for PORTC to measure pulse width of echo signal.
+ */
+void Ultrasonic_PORTC_IRQHandler(uint32_t flags, BaseType_t *hpw)
+{
+    if (flags & 1 << ECHO_PIN)
+    {
+        if (GPIOC->PDIR & (1 << ECHO_PIN))
+        {
+
+            // Rising edge detected, start timer
+            echo_start_us = TPM0->CNT;
+
+            // Set interrupt to trigger on falling edge
+            PORTC->PCR[ECHO_PIN] &= ~PORT_PCR_IRQC_MASK;
+            PORTC->PCR[ECHO_PIN] |= PORT_PCR_IRQC(0b1010);
+        }
+        else
+        {
+            // Falling edge detected, stop timer and record time
+            echo_end_us = TPM0->CNT;
+
+            // Set interrupt back to trigger on rising edge
+            PORTC->PCR[ECHO_PIN] &= ~PORT_PCR_IRQC_MASK;
+            PORTC->PCR[ECHO_PIN] |= PORT_PCR_IRQC(0b1001);
+
+            // Send pulse width to ultrasonic task
+            xSemaphoreGiveFromISR(ultraSem, hpw);
+        }
+
+        // Clear interrupt flag
+        PORTC->ISFR |= (1 << ECHO_PIN);
+    }
+}
+
+/*
+ * Start TIM0 to count microseconds for ultrasonic pulse width measurement.
+ */
+static void start_timer(void)
+{
+    TPM0->SC |= TPM_SC_CMOD(0b1);
+}
+
+/*
+ * Configures TIM0 with 1us increment.
+ */
+static void init_timer(void)
+{
+    // Turn on clock gating for TPM0
+    SIM->SCGC6 |= SIM_SCGC6_TPM0_MASK;
+
+    // Set TPM0 to use MCGIRCLK (8 MHz)
+    SIM->SOPT2 &= ~SIM_SOPT2_TPMSRC_MASK;
+    SIM->SOPT2 |= SIM_SOPT2_TPMSRC(0b11);
+
+    // Turn off TPM0 and clear prescaler mask
+    TPM0->SC &= ~TPM_SC_CMOD_MASK;
+    TPM0->SC &= ~TPM_SC_PS_MASK;
+
+    TPM0->CNT = 0;
+
+    // Set TPM0 prescaler
+    TPM0->SC |= TPM_SC_PS(0b011); // Prescaler of 8
+
+    // Set timer of 1us
+    // 8 MHz / 8 = 1 MHz
+    // 1 MHz / 1 us = 1 count
+    // Set modulo
+    TPM0->MOD = 65535;
+}
+
+/*
+ * Configures trig GPIO as output.
+ */
+static void init_trig_pin(void)
+{
+    // Turn on clock gating for PORTC
+    SIM->SCGC5 |= SIM_SCGC5_PORTC_MASK;
+
+    // Set TRIG pin as GPIO
+    PORTC->PCR[TRIG_PIN] &= ~PORT_PCR_MUX_MASK;
+    PORTC->PCR[TRIG_PIN] |= PORT_PCR_MUX(1);
+
+    // Set as output
+    GPIOC->PDDR |= 1 << TRIG_PIN;
+
+    // Turn off TRIG pin
+    GPIOC->PCOR |= 1 << TRIG_PIN;
+}
+
+/*
+ * Configures echo GPIO as input and interrupt to detect rising edge input.
+ */
+static void init_echo_pin(void)
+{
+    // Disable interrupts for PORTC
+    NVIC_DisableIRQ(PORTC_PORTD_IRQn);
+
+    // Turn on clock gating for PORTC
+    SIM->SCGC5 |= SIM_SCGC5_PORTC_MASK;
+
+    // Set ECHO pin as GPIO
+    PORTC->PCR[ECHO_PIN] &= ~PORT_PCR_MUX_MASK;
+    PORTC->PCR[ECHO_PIN] |= PORT_PCR_MUX(1);
+
+    // Set as input
+    GPIOC->PDDR &= ~(1 << ECHO_PIN);
+
+    // Configure the interrupt for rising edge
+    PORTC->PCR[ECHO_PIN] &= ~PORT_PCR_IRQC_MASK;
+    PORTC->PCR[ECHO_PIN] |= PORT_PCR_IRQC(0b1001);
+
+    // Set NVIC priority to 128
+    NVIC_SetPriority(PORTC_PORTD_IRQn, 128);
+
+    // Clear any pending interrupts for PORTC
+    NVIC_ClearPendingIRQ(PORTC_PORTD_IRQn);
+    PORTC->ISFR |= (1 << ECHO_PIN);
+
+    // Enable the interrupt for PORTC
+    NVIC_EnableIRQ(PORTC_PORTD_IRQn);
+}
+
+/*
+ *Configures ultrasonic GPIO, TIM0 and creates buzzer task and semaphore.
+ */
+void ultrasonic_init(int priority)
+{
+    ultraSem = xSemaphoreCreateBinary();
+    init_trig_pin();
+    init_echo_pin();
+    xTaskCreate(ultrasonic_task, "ultrasonic", configMINIMAL_STACK_SIZE + 100, NULL, priority, NULL);
+}

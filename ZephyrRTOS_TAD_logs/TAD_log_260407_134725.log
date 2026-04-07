@@ -1,0 +1,12 @@
+"Task Aware Debugger for GDB" version 25.6.0 (202506250844)
+Copyright 2016-2025 NXP
+==================================
+13:43:10.57 INFO: [ZephyrRTOS] .config file could not be read [/home/fookang/NUS/CG2271/Labs Answer/CG2271_git/Project/Medicine_Dispenser/Debug/.config (No such file or directory)]
+13:43:10.58 INFO: [TadModel] DSF session ID 15 has started.
+13:43:15.497 INFO: [TadState] TAD state changed: DEBUG_STARTED -> DEBUG_INIT_0 (RESUMED, USER_REQUEST)
+13:43:15.528 INFO: [TadState] TAD state changed: DEBUG_INIT_0 -> DEBUG_INIT_1 (SUSPENDED, SIGNAL)
+13:43:16.237 INFO: [TadState] TAD state changed: DEBUG_INIT_1 -> DEBUG_SUSPENDED (RESUMED, USER_REQUEST)
+13:43:16.257 INFO: [TadState] TAD state changed: DEBUG_SUSPENDED -> DEBUG_SUSPENDED (SUSPENDED, BREAKPOINT)
+13:43:21.95 INFO: [TadState] TAD state changed: DEBUG_SUSPENDED -> DEBUG_RESUMED (RESUMED, USER_REQUEST)
+13:47:23.893 INFO: [TadState] TAD state changed: DEBUG_RESUMED -> READY (SUSPENDED, SIGNAL)
+13:47:25.484 INFO: [TadModel] DSF session ID 15 has ended.

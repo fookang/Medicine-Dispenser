@@ -1,0 +1,6 @@
+../source/servo.c:11:13:startPWM	8	static
+../source/servo.c:26:13:setPWM	16	static
+../source/servo.c:41:6:Servo_Init	8	static
+../source/servo.c:94:6:toggleServo	8	static
+../source/servo.c:103:6:openServo	8	static
+../source/servo.c:112:6:closeServo	8	static

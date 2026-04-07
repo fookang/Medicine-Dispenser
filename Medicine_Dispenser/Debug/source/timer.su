@@ -1,0 +1,3 @@
+../source/timer.c:7:13:start_timer0	8	static
+../source/timer.c:15:13:init_timer0	8	static
+../source/timer.c:46:6:Init_Timer	8	static

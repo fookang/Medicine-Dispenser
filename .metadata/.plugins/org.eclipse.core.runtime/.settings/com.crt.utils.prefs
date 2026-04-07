@@ -1,0 +1,2 @@
+directories.bin=/opt/mcuxpresso-ide/ide/plugins/com.nxp.mcuxpresso.tools.bin.linux_25.6.0.202501151204/binaries/;/opt/linkserver/binaries;/opt/mcuxpresso-ide/ide/plugins/com.nxp.mcuxpresso.tools.linux_25.6.0.202501151204/tools/bin;/bin;/usr/bin;/sbin;
+eclipse.preferences.version=1

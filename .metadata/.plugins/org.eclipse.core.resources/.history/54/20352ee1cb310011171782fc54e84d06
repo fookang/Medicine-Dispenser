@@ -1,0 +1,49 @@
+#ifndef __BUZZER__
+#define __BUZZER__
+
+#include "FreeRTOS.h"
+
+/**
+ * @brief GPIO pin index used for buzzer output on PORTE.
+ *
+ * Hardware mapping: PTE0.
+ */
+#define BUZZER 0
+
+/**
+ * @brief Initializes buzzer GPIO, creates buzzer task and semaphore.
+ * @param Priority to be set for Buzzer Task
+ */
+void Buzzer_Init(int priority);
+
+/**
+ * @brief Drives buzzer output high.
+ */
+void buzzer_on(void);
+
+/**
+ * @brief Drives buzzer output low.
+ */
+void buzzer_off(void);
+
+/**
+ * @brief Toggles buzzer GPIO output state.
+ */
+void buzzer_toggle(void);
+
+/**
+ * @brief Signals the buzzer task to perform its task.
+ */
+void buzzer_wake(void);
+
+/**
+ * @brief Signals the buzzer task to stop buzzing.
+ */
+void buzzer_stop(void);
+
+/**
+ * @brief Change buzzer period
+ */
+BaseType_t buzzer_set_period_ms(uint32_t newPeriodMs);
+
+#endif

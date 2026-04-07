@@ -1,0 +1,39 @@
+#include "board.h"
+#include "button.h"
+#include "ultrasonic.h"
+
+void PORTA_IRQHandler(void)
+{
+    NVIC_ClearPendingIRQ(PORTA_IRQn);
+
+    BaseType_t hpw = pdFALSE;
+    uint32_t flags = PORTA->ISFR;
+
+    // ISR for button interrupt
+    Button_PortA_ISR(flags, &hpw);
+
+    portYIELD_FROM_ISR(hpw);
+}
+
+void TPM0_IRQHandler(void)
+{
+    NVIC_ClearPendingIRQ(TPM0_IRQn);
+
+    uint32_t flags = TPM0->STATUS;
+
+    // ISR for ultrasonic timer overflow
+    TPM0_Ultrasonic_IRQHandler(flags);
+}
+
+void PORTC_IRQHandler(void)
+{
+    NVIC_ClearPendingIRQ(PORTC_IRQn);
+
+    BaseType_t hpw = pdFALSE;
+    uint32_t flags = PORTC->ISFR;
+
+    // ISR for ultrasonic echo pin interrupt
+    Ultrasonic_PORTC_IRQHandler(flags, &hpw);
+
+    portYIELD_FROM_ISR(hpw);
+}

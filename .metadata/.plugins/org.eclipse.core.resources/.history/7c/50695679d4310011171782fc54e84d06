@@ -1,0 +1,174 @@
+#include "heartbeat.h"
+#include "buzzer.h"
+#include "MKL25Z4.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
+#include "fsl_debug_console.h"
+
+#include <stdint.h>
+#include <stdio.h>
+
+static SemaphoreHandle_t heartbeatSem;
+static volatile uint8_t heartbeatBusy = 0;
+static volatile uint16_t adcValue = 0;
+
+void startADC() {
+	//mask and set the channel
+	ADC0->SC1[0] &= ~ADC_SC1_ADCH_MASK;
+	ADC0->SC1[0] |= ADC_SC1_ADCH(HEARTBEAT_ADC_CHANNEL);
+}
+
+static void heartbeat_adc_init(void)
+{
+	// Disable & clear interrupt
+	NVIC_DisableIRQ(ADC0_IRQn);
+	NVIC_ClearPendingIRQ(ADC0_IRQn);
+
+	// Enable clock gating to ADC0
+	SIM->SCGC6 |= SIM_SCGC6_ADC0_MASK;
+
+    // Turn on clock gating for PORTE
+    SIM->SCGC5 |= SIM_SCGC5_PORTE_MASK;
+
+    // Set HEARTBEAT pin as ADC
+    PORTE->PCR[HEARTBEAT] &= ~PORT_PCR_MUX_MASK;
+    PORTE->PCR[HEARTBEAT] |= PORT_PCR_MUX(0);
+
+    // Configure the ADC
+	// Enable ADC interrupt
+	ADC0->SC1[0] |= ADC_SC1_AIEN_MASK;
+
+	// Select single-ended ADC
+	ADC0->SC1[0] &= ~ADC_SC1_DIFF_MASK;
+	ADC0->SC1[0] |= ADC_SC1_DIFF(0b0);
+
+	// Set 12 bit conversion
+	ADC0->CFG1 &= ~ADC_CFG1_MODE_MASK;
+	ADC0->CFG1 |= ADC_CFG1_MODE(0b01);
+
+	// Select software conversion trigger
+	ADC0->SC2 &= ~ADC_SC2_ADTRG_MASK;
+
+	// Configure alternate voltage reference
+	ADC0->SC2 &= ~ADC_SC2_REFSEL_MASK;
+	ADC0->SC2 |= ADC_SC2_REFSEL(0b01);
+
+	// Don't use averaging
+	ADC0->SC3 &= ~ADC_SC3_AVGE_MASK;
+	ADC0->SC3 |= ADC_SC3_AVGE(0);
+
+	// Switch off continuous conversion.
+	ADC0->SC3 &= ~ADC_SC3_ADCO_MASK;
+	ADC0->SC3 |= ADC_SC3_ADCO(0);
+
+	// Set lowest priority
+	NVIC_SetPriority(ADC0_IRQn, 192);
+	NVIC_EnableIRQ(ADC0_IRQn);
+}
+
+void ADC0_IRQHandler(void)
+{
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    /* Read result; this also clears COCO */
+    adcValue = (uint16_t)ADC0->R[0];
+
+    xSemaphoreGiveFromISR(adcSem, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+static uint32_t heartbeat_measure_bpm(void)
+{
+    uint32_t startTick = xTaskGetTickCount();
+    uint32_t durationTicks = pdMS_TO_TICKS(2000);
+
+    uint16_t threshold = 600;
+    uint8_t aboveThreshold = 0;
+    uint32_t beatCount = 0;
+
+    while ((xTaskGetTickCount() - startTick) < durationTicks)
+    {
+        startADC(HEARTBEAT_ADC_CHANNEL);
+
+        /* Wait until ADC interrupt gives semaphore */
+        if (xSemaphoreTake(adcSem, pdMS_TO_TICKS(20)) == pdTRUE)
+        {
+            uint16_t sample = adcValue;
+
+            if ((sample > threshold) && (aboveThreshold == 0))
+            {
+                aboveThreshold = 1;
+                beatCount++;
+
+                /* crude refractory delay to reduce double-counting */
+                vTaskDelay(pdMS_TO_TICKS(250));
+            }
+            else if (sample < threshold)
+            {
+                aboveThreshold = 0;
+            }
+        }
+
+        /* Sampling interval */
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
+    return beatCount * 30;
+}
+
+static void heartbeatTask(void *arg)
+{
+    (void)arg;
+
+    while (1)
+    {
+        if (xSemaphoreTake(heartbeatSem, portMAX_DELAY) == pdTRUE)
+        {
+            heartbeatBusy = 1;
+
+            uint32_t bpm = heartbeat_measure_bpm();
+
+            buzzer_wake();
+            vTaskDelay(pdMS_TO_TICKS(2000));
+            buzzer_stop();
+
+            PRINTF("Heartbeat measurement complete: %lu BPM\r\n", bpm);
+
+            heartbeatBusy = 0;
+        }
+    }
+}
+
+
+void Heartbeat_Init(int priority)
+{
+    heartbeat_adc_init();
+
+    heartbeatSem = xSemaphoreCreateBinary();
+    adcSem = xSemaphoreCreateBinary();
+
+    if ((heartbeatSem == NULL) || (adcSem == NULL))
+    {
+        PRINTF("Heartbeat semaphore creation failed\r\n");
+        return;
+    }
+
+    if (xTaskCreate(heartbeatTask,
+                    "heartbeat",
+                    configMINIMAL_STACK_SIZE + 200,
+                    NULL,
+                    priority,
+                    NULL) != pdPASS)
+    {
+        PRINTF("Heartbeat task creation failed\r\n");
+    }
+}
+
+void Heartbeat_StartMeasurement(void)
+{
+    if ((heartbeatSem != NULL) && (heartbeatBusy == 0))
+    {
+        xSemaphoreGive(heartbeatSem);
+    }
+}

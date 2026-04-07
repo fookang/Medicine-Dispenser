@@ -1,0 +1,9 @@
+#ifndef __TIMER__
+#define __TIMER__
+
+/**
+ * @brief Initializes required timer for modules.
+ */
+void init_timer(void);
+
+#endif

@@ -1,0 +1,9 @@
+../source/buzzer.c:22:13:buzzerTimerCallback	16	static
+../source/buzzer.c:29:13:buzzerTask	16	static
+../source/buzzer.c:53:6:Buzzer_Init	32	static
+../source/buzzer.c:91:6:buzzer_on	8	static
+../source/buzzer.c:99:6:buzzer_off	8	static
+../source/buzzer.c:107:6:buzzer_toggle	8	static
+../source/buzzer.c:115:6:buzzer_wake	8	static
+../source/buzzer.c:121:6:buzzer_stop	8	static
+../source/buzzer.c:127:12:buzzer_set_period_ms	40	static

@@ -1,0 +1,137 @@
+#include "heartbeat.h"
+#include "buzzer.h"
+#include "MKL25Z4.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
+#include "fsl_debug_console.h"
+
+#include <stdint.h>
+#include <stdio.h>
+
+static SemaphoreHandle_t heartbeatSem;
+static volatile uint8_t heartbeatBusy = 0;
+
+#define HEARTBEAT_ADC_CHANNEL   0
+
+static void heartbeat_adc_init(void)
+{
+    // Turn on clock gating for PORTE
+    SIM->SCGC5 |= SIM_SCGC5_PORTE_MASK;
+
+    // Set ECHO pin as GPIO
+    PORTC->PCR[ECHO_PIN] &= ~PORT_PCR_MUX_MASK;
+    PORTC->PCR[ECHO_PIN] |= PORT_PCR_MUX(1);
+
+    // Set as input
+    GPIOC->PDDR &= ~(1 << ECHO_PIN);
+
+    // Configure the interrupt for rising edge
+    PORTC->PCR[ECHO_PIN] &= ~PORT_PCR_IRQC_MASK;
+    PORTC->PCR[ECHO_PIN] |= PORT_PCR_IRQC(0b1001);
+
+    // Set NVIC priority to 128
+    NVIC_SetPriority(PORTC_PORTD_IRQn, 128);
+
+    // Clear any pending interrupts for PORTC
+    NVIC_ClearPendingIRQ(PORTC_PORTD_IRQn);
+    PORTC->ISFR |= (1 << ECHO_PIN);
+
+    // Enable the interrupt for PORTC
+    NVIC_EnableIRQ(PORTC_PORTD_IRQn);
+}
+
+static uint16_t heartbeat_adc_read(void)
+{
+    /* Start conversion on selected channel */
+    ADC0->SC1[0] = ADC_SC1_ADCH(HEARTBEAT_ADC_CHANNEL);
+
+    /* Wait for conversion complete */
+    while ((ADC0->SC1[0] & ADC_SC1_COCO_MASK) == 0)
+    {
+    }
+
+    return (uint16_t)ADC0->R[0];
+}
+
+static uint32_t heartbeat_measure_bpm(void)
+{
+    uint32_t startTick = xTaskGetTickCount();
+    uint32_t durationTicks = pdMS_TO_TICKS(2000);
+
+    uint16_t threshold = 600;   /* adjust after testing */
+    uint8_t aboveThreshold = 0;
+    uint32_t beatCount = 0;
+
+    while ((xTaskGetTickCount() - startTick) < durationTicks)
+    {
+        uint16_t sample = heartbeat_adc_read();
+
+        /* Simple peak detection */
+        if ((sample > threshold) && (aboveThreshold == 0))
+        {
+            aboveThreshold = 1;
+            beatCount++;
+        }
+        else if (sample < threshold)
+        {
+            aboveThreshold = 0;
+        }
+
+        /* Sampling delay: tune as needed */
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
+    /* Measured over 2 seconds, so BPM = beatCount * 30 */
+    return beatCount * 30;
+}
+
+static void heartbeatTask(void *arg)
+{
+    (void)arg;
+
+    while (1)
+    {
+        if (xSemaphoreTake(heartbeatSem, portMAX_DELAY) == pdTRUE)
+        {
+            heartbeatBusy = 1;
+
+            uint32_t bpm = heartbeat_measure_bpm();
+
+            buzzer_wake();
+            vTaskDelay(pdMS_TO_TICKS(2000));
+            buzzer_stop();
+
+            PRINTF("Heartbeat measurement complete: %lu BPM\r\n", bpm);
+
+            heartbeatBusy = 0;
+        }
+    }
+}
+
+void Heartbeat_Init(int priority)
+{
+    heartbeat_adc_init();
+
+    heartbeatSem = xSemaphoreCreateBinary();
+
+    xTaskCreate(heartbeatTask,
+				"heartbeat",
+				configMINIMAL_STACK_SIZE + 200,
+				NULL,
+				priority,
+				NULL);
+}
+
+void Heartbeat_StartMeasurement(void)
+{
+    if ((heartbeatSem != NULL) && (heartbeatBusy == 0))
+    {
+        xSemaphoreGive(heartbeatSem);
+    }
+}
+
+uint8_t Heartbeat_IsBusy(void)
+{
+    return heartbeatBusy;
+}
