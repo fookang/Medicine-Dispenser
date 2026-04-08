@@ -1,4 +1,0 @@
-/home/fookang/NUS/CG2271/Labs Answer/CG2271_git/Project/Medicine_Dispenser/CMSIS/core_cm0plus.h:848:22:__NVIC_ClearPendingIRQ	16	static
-../source/interrupt.c:6:6:PORTA_IRQHandler	16	static
-../source/interrupt.c:19:6:PORTC_PORTD_IRQHandler	16	static
-../source/interrupt.c:32:6:ADC0_IRQHandler	16	static

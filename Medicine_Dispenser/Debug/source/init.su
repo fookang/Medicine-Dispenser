@@ -1,4 +1,0 @@
-../source/init.c:6:6:init_ultrasonic	8	static
-../source/init.c:10:6:init_HDT	8	static
-../source/init.c:15:6:init_HB	8	static
-../source/init.c:19:6:init_timer	8	static

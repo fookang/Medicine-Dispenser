@@ -1,7 +1,0 @@
-/home/fookang/NUS/CG2271/Labs Answer/CG2271_git/Project/Medicine_Dispenser/CMSIS/core_cm0plus.h:757:22:__NVIC_EnableIRQ	16	static
-/home/fookang/NUS/CG2271/Labs Answer/CG2271_git/Project/Medicine_Dispenser/CMSIS/core_cm0plus.h:795:22:__NVIC_DisableIRQ	16	static
-/home/fookang/NUS/CG2271/Labs Answer/CG2271_git/Project/Medicine_Dispenser/CMSIS/core_cm0plus.h:848:22:__NVIC_ClearPendingIRQ	16	static
-/home/fookang/NUS/CG2271/Labs Answer/CG2271_git/Project/Medicine_Dispenser/CMSIS/core_cm0plus.h:866:22:__NVIC_SetPriority	24	static
-../source/button.c:20:13:buttonTask	16	static
-../source/button.c:41:6:Button_PortA_ISR	16	static
-../source/button.c:54:6:Button_Init	24	static
