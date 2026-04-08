@@ -2,6 +2,7 @@
 #define __CONSTANTS_INC__
 
 #define MAX_DATA_LEN 16
+#define MAGIC 0x67
 
 typedef enum {
 	BUZZER_DEV = 0,
@@ -22,6 +23,7 @@ typedef enum {
 
 typedef struct
 {
+	uint8_t magic;
 	uint8_t device_type;
 	uint8_t command;
 	uint8_t padding[2];
