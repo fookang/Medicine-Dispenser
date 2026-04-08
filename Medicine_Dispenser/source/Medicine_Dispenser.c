@@ -46,16 +46,16 @@ void Init_Clk()
 {
     setMCGIRClk();
 
-	//Choose 8MHz MCGIRCLK
+    // Choose 8MHz MCGIRCLK
     SIM->SOPT2 &= ~SIM_SOPT2_TPMSRC_MASK;
     SIM->SOPT2 |= SIM_SOPT2_TPMSRC(0b11);
 }
 
-
 /*
  * @brief   Application entry point.
  */
-int main(void) {
+int main(void)
+{
 
     /* Init board hardware. */
     BOARD_InitBootPins();
@@ -72,13 +72,14 @@ int main(void) {
     FreeRTOS_Init();
 
     /* Force the counter to be placed into memory. */
-    volatile static int i = 0 ;
+    volatile static int i = 0;
     /* Enter an infinite loop, just incrementing a counter. */
-    while(1) {
-        i++ ;
+    while (1)
+    {
+        i++;
         /* 'Dummy' NOP to allow source level single stepping of
             tight while() loop */
-        __asm volatile ("nop");
+        __asm volatile("nop");
     }
-    return 0 ;
+    return 0;
 }
