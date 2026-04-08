@@ -59,6 +59,15 @@ static void sendTask(void *arg)
 		TPacket packet;
 		if (xQueueReceive(send_queue, &packet, portMAX_DELAY) == pdTRUE)
 		{
+			PRINTF("Sending packet:\r\n");
+			PRINTF("  device_type = %u\r\n", packet.device_type);
+			PRINTF("  command     = %u\r\n", packet.command);
+			PRINTF("  data        = ");
+			for (int i = 0; i < MAX_DATA_LEN; i++)
+			{
+				PRINTF("%02X ", packet.data[i]);
+			}
+			PRINTF("\r\n");
 			sendPacket(&packet);
 			xSemaphoreTake(txDoneSem, portMAX_DELAY);
 		}
@@ -81,13 +90,18 @@ static void recvTask(void *arg)
 			PRINTF("Received packet:\r\n");
 			PRINTF("  device_type = %u\r\n", packet.device_type);
 			PRINTF("  command     = %u\r\n", packet.command);
-			PRINTF("  data        = %s\r\n", packet.data);
-			if (packet.device_type == BUZZER)
+			PRINTF("  data        = ");
+			for (int i = 0; i < MAX_DATA_LEN; i++)
+			{
+				PRINTF("%02X ", packet.data[i]);
+			}
+			PRINTF("\r\n");
+			if (packet.device_type == BUZZER_DEV)
 			{
 				switch (packet.command)
 				{
 				case BUZZER_ON:
-					buzzer_on();
+					buzzer_wake();
 					break;
 
 				case BUZZER_OFF:
@@ -113,6 +127,7 @@ void UART2_FLEXIO_IRQHandler(void)
 {
 	// Send and receive pointers
 	static int recv_ptr = 0, send_ptr = 0;
+	static uint8_t receiving = 0;
 
 	NVIC_ClearPendingIRQ(UART2_FLEXIO_IRQn);
 	if (UART2->S1 & UART_S1_TDRE_MASK) // Send data
@@ -142,18 +157,37 @@ void UART2_FLEXIO_IRQHandler(void)
 	{
 		// Read Data to buffer
 		uint8_t rx_data = UART2->D;
-		recv_buffer[recv_ptr++] = rx_data;
-
-		if (recv_ptr >= sizeof(TPacket))
+		if (!receiving)
 		{
-			TPacket packet;
-			BaseType_t hpw = pdFALSE;
+			if (rx_data == MAGIC)
+			{
+				recv_ptr = 0;
+				recv_buffer[recv_ptr++] = rx_data;
+				receiving = 1;
+			}
+		}
+		else
+		{
+			if (recv_ptr < sizeof(TPacket))
+			{
+				recv_buffer[recv_ptr++] = rx_data;
+			}
 
-			memcpy(&packet, recv_buffer, sizeof(TPacket));
-			xQueueSendFromISR(rec_queue, (void *)&packet, &hpw);
-			portYIELD_FROM_ISR(hpw);
+			if (recv_ptr >= sizeof(TPacket))
+			{
+				TPacket packet;
+				BaseType_t hpw = pdFALSE;
 
-			recv_ptr = 0;
+				memcpy(&packet, recv_buffer, sizeof(TPacket));
+				if (packet.magic == MAGIC)
+				{
+					xQueueSendFromISR(rec_queue, (void *)&packet, &hpw);
+					portYIELD_FROM_ISR(hpw);
+				}
+
+				recv_ptr = 0;
+				receiving = 0;
+			}
 		}
 	}
 }
@@ -198,7 +232,7 @@ void init_uart(int recvPriority, int sendPriority)
 	UART2->C1 &= ~UART_C1_LOOPS_MASK;
 	UART2->C1 &= ~UART_C1_RSRC_MASK;
 
-	// Disable parity
+	// Disable parity2
 	UART2->C1 &= ~UART_C1_PE_MASK;
 
 	// 8-bit mode
