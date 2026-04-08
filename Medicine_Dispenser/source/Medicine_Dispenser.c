@@ -9,6 +9,7 @@
  * @file    Medicine_Dispenser.c
  * @brief   Application entry point.
  */
+#include <freertos_init.h>
 #include <stdio.h>
 #include "board.h"
 #include "peripherals.h"
@@ -16,8 +17,8 @@
 #include "clock_config.h"
 #include "fsl_debug_console.h"
 /* TODO: insert other include files here. */
-#include "freertos.h"
 #include "timer.h"
+#include "freertos_init.h"
 
 /* TODO: insert other definitions and declarations here. */
 
