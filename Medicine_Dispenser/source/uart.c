@@ -60,6 +60,7 @@ static void sendTask(void *arg)
 		if (xQueueReceive(send_queue, &packet, portMAX_DELAY) == pdTRUE)
 		{
 			PRINTF("Sending packet:\r\n");
+			packet.magic = MAGIC;
 			PRINTF("  device_type = %u\r\n", packet.device_type);
 			PRINTF("  command     = %u\r\n", packet.command);
 			PRINTF("  data        = ");
