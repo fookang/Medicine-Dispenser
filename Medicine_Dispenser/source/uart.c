@@ -106,7 +106,7 @@ static void recvTask(void *arg)
 					break;
 
 				case BUZZER_OFF:
-					buzzer_off();
+					buzzer_stop();
 					break;
 
 				case BUZZER_CHANGE:
