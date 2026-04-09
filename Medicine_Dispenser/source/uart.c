@@ -10,6 +10,7 @@
 #include "uart.h"
 #include "constant.h"
 #include "buzzer.h"
+#include "servo.h"
 
 #include "fsl_debug_console.h"
 
@@ -115,6 +116,25 @@ static void recvTask(void *arg)
 					uint32_t time = packet.data[0] * 1000 * 60 * 60;
 					buzzer_set_period_ms(time);
 				}
+				default:
+					// dont change anything
+				}
+			}
+			if (packet.device_type == SERVO_DEV)
+			{
+				switch (packet.command)
+				{
+				case SERVO_OPEN:
+					openServo();
+					break;
+
+				case SERVO_CLOSE:
+					closeServo();
+					break;
+
+				default:
+					// Dont do anything
+
 				}
 			}
 		}
