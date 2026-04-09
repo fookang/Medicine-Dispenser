@@ -62,9 +62,10 @@ static void sendTask(void *arg)
 		{
 			PRINTF("Sending packet:\r\n");
 			packet.magic = MAGIC;
-			PRINTF("  device_type = %u\r\n", packet.device_type);
-			PRINTF("  command     = %u\r\n", packet.command);
-			PRINTF("  data        = ");
+			PRINTF("magic = %u\r\n", packet.magic);
+			PRINTF("device_type = %u\r\n", packet.device_type);
+			PRINTF("command     = %u\r\n", packet.command);
+			PRINTF("data        = ");
 			for (int i = 0; i < MAX_DATA_LEN; i++)
 			{
 				PRINTF("%02X ", packet.data[i]);
@@ -90,9 +91,10 @@ static void recvTask(void *arg)
 		if (xQueueReceive(rec_queue, &packet, portMAX_DELAY) == pdTRUE)
 		{
 			PRINTF("Received packet:\r\n");
-			PRINTF("  device_type = %u\r\n", packet.device_type);
-			PRINTF("  command     = %u\r\n", packet.command);
-			PRINTF("  data        = ");
+			PRINTF("magic = %u\r\n", packet.magic);
+			PRINTF("device_type = %u\r\n", packet.device_type);
+			PRINTF("command     = %u\r\n", packet.command);
+			PRINTF("data        = ");
 			for (int i = 0; i < MAX_DATA_LEN; i++)
 			{
 				PRINTF("%02X ", packet.data[i]);
@@ -120,7 +122,7 @@ static void recvTask(void *arg)
 					// dont change anything
 				}
 			}
-			if (packet.device_type == SERVO_DEV)
+			else if (packet.device_type == SERVO_DEV)
 			{
 				switch (packet.command)
 				{
@@ -130,6 +132,19 @@ static void recvTask(void *arg)
 
 				case SERVO_CLOSE:
 					closeServo();
+					break;
+
+				default:
+					// Dont do anything
+
+				}
+			}
+			else if (packet.device_type == HB_SENSOR_DEV)
+			{
+				switch (packet.command)
+				{
+				case HB_GET_DATA:
+					buzzer_wake();
 					break;
 
 				default:
