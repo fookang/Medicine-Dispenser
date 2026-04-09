@@ -68,7 +68,6 @@ static void heartbeat_adc_init(void)
 void Heartbeat_ADC0_IRQHandler(uint32_t adcValue, BaseType_t *hpw)
 {
     g_adcValue = (uint16_t) adcValue;
-    PRINTF("ADC ch=%d sample=%u\r\n", HEARTBEAT_ADC_CHANNEL, g_adcValue);
     xSemaphoreGiveFromISR(adcSem, hpw);
 }
 
@@ -149,6 +148,8 @@ static void heartbeatTask(void *arg)
     {
         if (xSemaphoreTake(heartbeatSem, portMAX_DELAY) == pdTRUE)
         {
+            PRINTF("Measuring heart rate\r\n");
+
             heartbeatBusy = 1;
 
             uint32_t bpm = heartbeat_measure_bpm();
