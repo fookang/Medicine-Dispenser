@@ -4,16 +4,14 @@
 /**
  * @brief Servo pin index used for servo output on PORTE.
  *
- * Hardware mapping: PTE20 and PTE21.
+ * Hardware mapping: PTE20.
  */
 #define SERVO1 20
-#define SERVO2 21
 
 /**
  * @brief Servo channel index used for TPM1 channels for pwm.
  */
 #define SERVO1_CHANNEL 0
-#define SERVO2_CHANNEL 1
 
 /*
  * @brief Enum for servo positions.

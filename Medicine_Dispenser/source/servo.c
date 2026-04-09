@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include "board.h"
 
-#define OPEN_PWM 2000
-#define CLOSE_PWM 4000
+#define OPEN_PWM 4000
+#define CLOSE_PWM 2000
 
 static ServoPosition servoState;
 
@@ -50,11 +50,8 @@ void Servo_Init(void)
 	PORTE->PCR[SERVO1] &= ~PORT_PCR_MUX_MASK;
 	PORTE->PCR[SERVO1] |= PORT_PCR_MUX(0b11);
 
-	PORTE->PCR[SERVO2] &= ~PORT_PCR_MUX_MASK;
-	PORTE->PCR[SERVO2] |= PORT_PCR_MUX(0b11);
-
 	// Set pins to output
-	GPIOE->PDDR |= ((1 << SERVO1) | (1 << SERVO2));
+	GPIOE->PDDR |= (1 << SERVO1);
 
 	// Turn off TPM0 by clearing the clock mode
 	TPM1->SC &= ~TPM_SC_CMOD_MASK;
@@ -78,8 +75,6 @@ void Servo_Init(void)
 	//  MS = 10, ELS = 10
 	TPM1->CONTROLS[SERVO1_CHANNEL].CnSC &= ~(TPM_CnSC_MSB_MASK | TPM_CnSC_MSA_MASK | TPM_CnSC_ELSB_MASK | TPM_CnSC_ELSA_MASK);
 	TPM1->CONTROLS[SERVO1_CHANNEL].CnSC |= (TPM_CnSC_MSB(1) | TPM_CnSC_MSA(0) | TPM_CnSC_ELSB(1) | TPM_CnSC_ELSA(0));
-	TPM1->CONTROLS[SERVO2_CHANNEL].CnSC &= ~(TPM_CnSC_MSB_MASK | TPM_CnSC_MSA_MASK | TPM_CnSC_ELSB_MASK | TPM_CnSC_ELSA_MASK);
-	TPM1->CONTROLS[SERVO2_CHANNEL].CnSC |= (TPM_CnSC_MSB(1) | TPM_CnSC_MSA(0) | TPM_CnSC_ELSB(1) | TPM_CnSC_ELSA(0));
 
 	TPM1->CONTROLS[SERVO1_CHANNEL].CnV = CLOSE_PWM;
 	servoState = CLOSE;
