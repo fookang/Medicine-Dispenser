@@ -9,6 +9,9 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "constant.h"
+#include "uart.h"
+
 static SemaphoreHandle_t heartbeatSem;
 static SemaphoreHandle_t adcSem;
 static volatile uint8_t heartbeatBusy = 0;
@@ -155,6 +158,12 @@ static void heartbeatTask(void *arg)
             buzzer_stop();
 
             PRINTF("Heartbeat measurement complete: %lu BPM\r\n", bpm);
+            TPacket pkt = {0};
+            pkt.device_type = HB_SENSOR_DEV;
+            pkt.command = CMD_NONE;
+            pkt.data[0] = (uint8_t) bpm;
+
+            uart_send(&pkt);
 
             heartbeatBusy = 0;
         }
