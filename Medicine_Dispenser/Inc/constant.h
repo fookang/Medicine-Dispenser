@@ -18,7 +18,8 @@ typedef enum {
 	BUZZER_ON = 2,
 	BUZZER_OFF = 3,
 	BUZZER_CHANGE = 4,
-	CMD_NONE = 5
+	HB_GET_DATA = 5,
+	CMD_NONE = 6
 } Command;
 
 typedef struct
