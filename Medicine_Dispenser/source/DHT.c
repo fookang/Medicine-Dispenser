@@ -9,7 +9,7 @@
 #include "fsl_debug_console.h"
 
 /* Threshold for high temperature alarm and count limit for consecutive readings */
-#define HIGH_TEMP_THRESHOLD 40
+#define HIGH_TEMP_THRESHOLD 23
 #define HIGH_TEMP_COUNT_LIMIT 3
 
 static void DHT_pin_output(void)
@@ -95,19 +95,16 @@ static int DHT_read(DHT_data_t *out)
     if (!wait_for_level(0, 100))
     {
         taskEXIT_CRITICAL();
-        PRINTF("fail A\r\n");
         return 0;
     }
     if (!wait_for_level(1, 100))
     {
         taskEXIT_CRITICAL();
-        PRINTF("fail B\r\n");
         return 0;
     }
     if (!wait_for_level(0, 100))
     {
         taskEXIT_CRITICAL();
-        PRINTF("fail C\r\n");
         return 0;
     }
 
@@ -117,7 +114,6 @@ static int DHT_read(DHT_data_t *out)
         if (!wait_for_level(1, 100))
         {
             taskEXIT_CRITICAL();
-            PRINTF("fail bit high %d\r\n", i);
             return 0;
         }
 
@@ -130,7 +126,6 @@ static int DHT_read(DHT_data_t *out)
         if (!wait_for_level(0, 100))
         {
             taskEXIT_CRITICAL();
-            PRINTF("fail bit low %d\r\n", i);
             return 0;
         }
     }
@@ -174,12 +169,14 @@ static void DHTTask(void *arg)
                 if ((highTempCount >= HIGH_TEMP_COUNT_LIMIT) && !highAlarmSent)
                 {
                     TPacket tpkt = {0};
+                    tpkt.magic = MAGIC;
                     tpkt.device_type = DHT_SENSOR_DEV;
                     tpkt.command = CMD_NONE;
                     tpkt.data[0] = data.temperature_c;
                     tpkt.data[1] = data.humidity_percent;
 
                     uart_send(&tpkt);
+                    PRINTF("SEND temperature\r\n");
                     highAlarmSent = 1;
                 }
             }
