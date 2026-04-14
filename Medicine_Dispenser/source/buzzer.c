@@ -34,14 +34,14 @@ static void buzzerTask(void *arg)
     {
         if (xSemaphoreTake(buzzerSem, portMAX_DELAY) == pdTRUE)
         {
-        	buzzerActive = 1;
-        	while (buzzerActive)
-        	{
-        		buzzer_toggle();
-        		vTaskDelay(pdMS_TO_TICKS(buzzerTogglePeriodMs));
-        	}
+            buzzerActive = 1;
+            while (buzzerActive)
+            {
+                buzzer_toggle();
+                vTaskDelay(pdMS_TO_TICKS(buzzerTogglePeriodMs));
+            }
 
-        	buzzer_off();
+            buzzer_off();
         }
     }
 }
@@ -77,7 +77,7 @@ void Buzzer_Init(int priority)
     // Check if timer is properly initialised
     if (buzzerTimer == NULL)
     {
-    	PRINTF("BUZZER FAILED TO INISTIALISED\n\r");
+        PRINTF("BUZZER FAILED TO INISTIALISED\n\r");
     }
     else
     {
@@ -123,7 +123,11 @@ void buzzer_stop(void)
     buzzerActive = false;
 }
 
-/* Change auto-buzz interval while system is running */
+/* 
+ * Change auto-buzz interval while system is running
+ *
+ * Not use in current iteration
+ */
 BaseType_t buzzer_set_period_ms(uint32_t newPeriodMs)
 {
     if (newPeriodMs == 0 || buzzerTimer == NULL)
@@ -134,6 +138,6 @@ BaseType_t buzzer_set_period_ms(uint32_t newPeriodMs)
     BUZZER_PERIOD_MS = newPeriodMs;
 
     return xTimerChangePeriod(buzzerTimer,
-                              pdMS_TO_TICKS(newPeriodMs),
-                              portMAX_DELAY);
+            pdMS_TO_TICKS(newPeriodMs),
+            portMAX_DELAY);
 }

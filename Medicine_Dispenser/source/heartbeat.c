@@ -17,6 +17,10 @@ static SemaphoreHandle_t adcSem;
 static volatile uint8_t heartbeatBusy = 0;
 static volatile uint16_t g_adcValue = 0;
 
+
+/*
+ * This set up the ADC channel and pin for reading of heartbeat data.
+ */
 static void heartbeat_adc_init(void)
 {
     // Disable & clear interrupt
@@ -65,6 +69,10 @@ static void heartbeat_adc_init(void)
     NVIC_EnableIRQ(ADC0_IRQn);
 }
 
+/*
+ * Interrupt handler for adc compeletion. 
+ * Give semaphore to adcSem to read the required value
+ */
 void Heartbeat_ADC0_IRQHandler(uint32_t adcValue, BaseType_t *hpw)
 {
     g_adcValue = (uint16_t) adcValue;
@@ -77,7 +85,12 @@ static void startADC(void) {
     ADC0->SC1[0] |= ADC_SC1_ADCH(HEARTBEAT_ADC_CHANNEL);
 }
 
-
+/*
+ * Helper function to measure heartrate
+ * This function measures heartrate in a period of 10 seconds
+ * and extrapolate the value for heart rate per minutes
+ *
+ */
 static uint32_t heartbeat_measure_bpm(void)
 {
     uint32_t startTick = xTaskGetTickCount();
@@ -139,7 +152,12 @@ static uint32_t heartbeat_measure_bpm(void)
     return (beatCount * 60) / 5;
 }
 
-
+/*
+ * Heartbeat Task which is in charge of measuring heartrate
+ * It measures heartrate via heartbeat_measure_bpm() funciton
+ * and send the value over UART
+ *
+ */
 static void heartbeatTask(void *arg)
 {
     (void)arg;
@@ -172,6 +190,10 @@ static void heartbeatTask(void *arg)
 }
 
 
+/*
+ * This sets up the adc pin and starts the internal FreeRTOS task
+ * responsible for measuring heartrate and sending values over UART. 
+ */
 void Heartbeat_Init(int priority)
 {
     heartbeatSem = xSemaphoreCreateBinary();
@@ -187,7 +209,9 @@ void Heartbeat_Init(int priority)
             NULL);
 }
 
-
+/*
+ * Function exposed as API for other task to signal the start of measuring heart rate
+ */
 void Heartbeat_StartMeasurement(BaseType_t *hpw)
 {
     if ((heartbeatSem != NULL) && (heartbeatBusy == 0))
