@@ -1,0 +1,43 @@
+@startuml architecture
+
+package "MCXC444" {
+    component [button1]
+    component [button2]
+    component [buzzer]
+    component [DHT]
+    component [heartbeat]
+    component [servo]
+    component [timer]
+    component [uart]
+    component [ultrasonic]
+}
+package "ESP32" {
+    component [esp32]
+}
+
+
+esp32 --> uart : Send Commands
+
+uart --> buzzer : On Buzzer
+uart --> servo : Control Servo
+
+button1 --> buzzer : Off Buzzer
+button2 --> heartbeat : Starts Measurement
+
+heartbeat --> uart : Send Heartbeat Data
+uart --> esp32 : Send Data to ESP32
+
+ultrasonic --> servo : Control Servo
+DHT --> uart : Send Sensor Data
+note top of DHT
+    Measures temperature and 
+    humidity every 10 seconds 
+    and sends data to ESP32 
+    via UART if treshold is exceeded.
+end note
+
+DHT ..> timer : Uses for timing
+ultrasonic ..> timer : Uses for timing
+
+
+@enduml
