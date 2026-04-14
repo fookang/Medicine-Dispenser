@@ -15,6 +15,7 @@ Quick pin/port mapping for this firmware (MCXC444).
 | Ultrasonic TRIG | PTC2 | PORTC | Output | GPIO | `ultrasonic.h`, `ultrasonic.c` |
 | Ultrasonic ECHO | PTC1 | PORTC | Input | GPIO + edge IRQ | `ultrasonic.h`, `ultrasonic.c` |
 | DHT11 data | PTD3 | PORTD | In/Out (single-wire) | GPIO | `DHT.h`, `DHT.c` |
+| Heartbeat data | PTE30 | PORTE | Input | GPIO | `heartbeat.h`, `heartbeat.c` |
 
 ## Interrupt Map
 
@@ -23,6 +24,7 @@ Quick pin/port mapping for this firmware (MCXC444).
 | `PORTA_IRQHandler` | Button input on PTA4 | `button.c, interrupt.c` |
 | `PORTC_PORTD_IRQHandler` | Ultrasonic echo on PTC1 | `ultrasonic.c, interrupt.c` |
 | `UART2_FLEXIO_IRQHandler` | UART2 TX/RX byte handling | `uart.c` |
+| `ADC0_IRQHandler` | ADC0 conversion completion for heartbeat | `interrupt.c, heartbeat.c` |
 
 ## Timer / Clock Usage
 
