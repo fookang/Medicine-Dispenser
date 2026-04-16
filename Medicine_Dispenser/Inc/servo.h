@@ -25,7 +25,7 @@ typedef enum
 /*
  * @brief Initializes servo GPIO and PWM handling.
  *
- * This function configures PTE20 and PTE21 for TPM1 PWM output,
+ * This function configures PTE20 for TPM1 PWM output,
  * sets up TPM1 for edge-aligned PWM with a 20 ms period, and initializes the servo to the closed position.
  */
 void Servo_Init(void);
