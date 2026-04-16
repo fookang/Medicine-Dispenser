@@ -1,9 +1,9 @@
+#include <dht.h>
 #include "board.h"
 #include "FreeRTOS.h"
 #include "task.h"
 
 #include "constant.h"
-#include "DHT.h"
 #include "uart.h"
 
 #include "fsl_debug_console.h"
@@ -79,7 +79,8 @@ static int DHT_read(DHT_data_t *out)
 {
     uint8_t bits[5] = {0};
 
-    /* Output low for at least 18ms start signal */
+    // Output low for at least 18ms start signal
+    // Set to 20ms to ensure timing requirements are met
     DHT_pin_output();
     DHT_write_low();
     vTaskDelay(pdMS_TO_TICKS(20));
@@ -145,7 +146,7 @@ static int DHT_read(DHT_data_t *out)
  * FreeRTOS task responsible for periodic sensor reads and alarm reporting.
  * Reads data every 10 seconds, checks for 3 consecutive high temperatures, and sends alarm if needed.
  */
-static void DHTTask(void *arg)
+static void DHT_task(void *arg)
 {
     (void)arg;
 
@@ -196,10 +197,10 @@ static void DHTTask(void *arg)
 }
 
 /*
- * This sets up the data pin and starts the internal FreeRTOS task
+ * Sets up the data pin and starts the FreeRTOS task
  * responsible for periodic sensor reads and alarm reporting.
  */
-void DHT_init(int priority)
+void DHT_Init(int priority)
 {
     // Turn on clock gating
     SIM->SCGC5 |= SIM_SCGC5_PORTD_MASK;
@@ -218,6 +219,6 @@ void DHT_init(int priority)
     GPIOD->PSOR |= 1 << DHT_PIN;
 
     // Create DHT task
-    xTaskCreate(DHTTask, "DHT", configMINIMAL_STACK_SIZE + 100, NULL, priority, NULL);
+    xTaskCreate(DHT_task, "DHT", configMINIMAL_STACK_SIZE + 100, NULL, priority, NULL);
     PRINTF("DHT11 created\r\n");
 }

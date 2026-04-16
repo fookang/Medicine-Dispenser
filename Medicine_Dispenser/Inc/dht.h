@@ -1,6 +1,8 @@
 #ifndef __DHT__
 #define __DHT__
 
+#include <stdint.h>
+
 /**
  * @brief GPIO pin index used for DHT11 single-wire data line.
  *
@@ -25,6 +27,6 @@ typedef struct
  *
  * @param priority Priority for the DHT task.
  */
-void DHT_init(int priority);
+void DHT_Init(int priority);
 
 #endif

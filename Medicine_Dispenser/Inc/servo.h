@@ -33,16 +33,16 @@ void Servo_Init(void);
 /*
  * @brief Toggles the servo between open and closed positions.
  */
-void toggleServo(void);
+void toggle_servo(void);
 
 /*
  * @brief Sets the servo to the open position.
  */
-void openServo(void);
+void open_servo(void);
 
 /*
  * @brief Sets the servo to the closed position.
  */
-void closeServo(void);
+void close_servo(void);
 
 #endif

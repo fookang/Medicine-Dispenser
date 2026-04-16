@@ -24,7 +24,7 @@
  *
  * @param priority Priority for the Ultrasonic task.
  */
-void ultrasonic_init(int priority);
+void Ultrasonic_Init(int priority);
 
 /*
  * @brief ISR for PORTC interrupt triggered by ultrasonic sensor echo pin.

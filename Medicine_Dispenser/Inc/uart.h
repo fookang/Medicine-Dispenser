@@ -19,7 +19,7 @@
  * @param recvPriority  Priority for the UART receive task.
  * @param sendPriority  Priority for the UART transmit task.
  */
-void init_uart(int recvPriority, int sendPriority);
+void Uart_Init(int recvPriority, int sendPriority);
 
 /*
  * @brief Sends a packet of data over UART2.

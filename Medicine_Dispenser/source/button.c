@@ -17,16 +17,19 @@
 /* Binary semaphore released by the PORTA ISR when button is pressed. */
 SemaphoreHandle_t buttonSem;
 
-
-static void buttonTask(void *arg)
+/*
+ * Task to handle button press events.
+ * Waits for a semaphore from the PORTA ISR and stops the buzzer when received.
+ */
+static void button_task(void *arg)
 {
-    (void)arg;
-    while(1)
-    {
-    	if (xSemaphoreTake(buttonSem, portMAX_DELAY) == pdTRUE)
-    	{
-    		buzzer_stop();
-    	}
+	(void)arg;
+	while (1)
+	{
+		if (xSemaphoreTake(buttonSem, portMAX_DELAY) == pdTRUE)
+		{
+			buzzer_stop();
+		}
 	}
 }
 
@@ -35,91 +38,100 @@ static void buttonTask(void *arg)
  */
 void Button_PortA_ISR(uint32_t flags, BaseType_t *hpw)
 {
-	if(flags & (1 << SWITCH_PIN_BUZZER))
+	if (flags & (1 << SWITCH_PIN_BUZZER))
 	{
-	    PORTA->ISFR |= (1 << SWITCH_PIN_BUZZER);
+		PORTA->ISFR |= (1 << SWITCH_PIN_BUZZER);
 		xSemaphoreGiveFromISR(buttonSem, hpw);
 	}
 }
 
+/*
+ * Starts heartbeat measurement when the heartbeat button is pressed.
+ */
 void Button_PORTC_ISR(uint32_t flags, BaseType_t *hpw)
 {
-	if(flags & (1 << SWITCH_PIN_HEARTBEAT))
+	if (flags & (1 << SWITCH_PIN_HEARTBEAT))
 	{
-	    PORTC->ISFR |= (1 << SWITCH_PIN_HEARTBEAT);
-	    Heartbeat_StartMeasurement(hpw);
+		PORTC->ISFR |= (1 << SWITCH_PIN_HEARTBEAT);
+		Heartbeat_StartMeasurement(hpw);
 	}
 }
 
+/*
+ * Initializes the buzzer button.
+ */
 static void buzzer_button_init()
 {
-	//Disable interrupts
+	// Disable interrupts
 	NVIC_DisableIRQ(PORTA_IRQn);
 
-	//Enable clock gating to PORTA
+	// Enable clock gating to PORTA
 	SIM->SCGC5 |= (SIM_SCGC5_PORTA_MASK);
 
-	//Configure MUX of PTA4
+	// Configure MUX of PTA4
 	PORTA->PCR[SWITCH_PIN_BUZZER] &= ~PORT_PCR_MUX_MASK;
 	PORTA->PCR[SWITCH_PIN_BUZZER] |= PORT_PCR_MUX(1);
 
-	//Set pullup resistor
+	// Set pullup resistor
 	PORTA->PCR[SWITCH_PIN_BUZZER] &= ~PORT_PCR_PS_MASK;
 	PORTA->PCR[SWITCH_PIN_BUZZER] |= PORT_PCR_PS(1);
 	PORTA->PCR[SWITCH_PIN_BUZZER] &= ~PORT_PCR_PE_MASK;
 	PORTA->PCR[SWITCH_PIN_BUZZER] |= PORT_PCR_PE(1);
 
-	//Set as input
+	// Set as input
 	GPIOA->PDDR &= ~(1 << SWITCH_PIN_BUZZER);
 
-	//Configure the interrupt for falling edge
+	// Configure the interrupt for falling edge
 	PORTA->PCR[SWITCH_PIN_BUZZER] &= ~PORT_PCR_IRQC_MASK;
 	PORTA->PCR[SWITCH_PIN_BUZZER] |= PORT_PCR_IRQC(0b1010);
 
-	//Set NVIC priority to 192
+	// Set NVIC priority to 192
 	NVIC_SetPriority(PORTA_IRQn, 192);
 
-	//Clear pending interrupts and enable interrupts
+	// Clear pending interrupts and enable interrupts
 	NVIC_ClearPendingIRQ(PORTA_IRQn);
 	NVIC_EnableIRQ(PORTA_IRQn);
 }
 
+/*
+ * Initializes the heartbeat button.
+ */
 static void heartbeat_button_init()
 {
 
-    // Disable interrupts
-    NVIC_DisableIRQ(PORTC_PORTD_IRQn);
+	// Disable interrupts
+	NVIC_DisableIRQ(PORTC_PORTD_IRQn);
 
-    // Turn on clocking
-    SIM->SCGC5 |= SIM_SCGC5_PORTC_MASK;
+	// Turn on clocking
+	SIM->SCGC5 |= SIM_SCGC5_PORTC_MASK;
 
-    // Configure as GPIO
-    PORTC->PCR[SWITCH_PIN_HEARTBEAT] &= ~PORT_PCR_MUX_MASK;
-    PORTC->PCR[SWITCH_PIN_HEARTBEAT] |= PORT_PCR_MUX(1);
+	// Configure as GPIO
+	PORTC->PCR[SWITCH_PIN_HEARTBEAT] &= ~PORT_PCR_MUX_MASK;
+	PORTC->PCR[SWITCH_PIN_HEARTBEAT] |= PORT_PCR_MUX(1);
 
-    // Configure pull up resisotr
-    PORTC->PCR[SWITCH_PIN_HEARTBEAT] &= ~PORT_PCR_PS_MASK;
-    PORTC->PCR[SWITCH_PIN_HEARTBEAT] |= PORT_PCR_PS(1);
+	// Configure pull up resisotr
+	PORTC->PCR[SWITCH_PIN_HEARTBEAT] &= ~PORT_PCR_PS_MASK;
+	PORTC->PCR[SWITCH_PIN_HEARTBEAT] |= PORT_PCR_PS(1);
 
-    // Set GPIO as input
-    GPIOC->PDDR &= ~(1 << SWITCH_PIN_HEARTBEAT);
+	// Set GPIO as input
+	GPIOC->PDDR &= ~(1 << SWITCH_PIN_HEARTBEAT);
 
-    // Enable pull up resistor
-    PORTC->PCR[SWITCH_PIN_HEARTBEAT] &= ~PORT_PCR_PE_MASK;
-    PORTC->PCR[SWITCH_PIN_HEARTBEAT] |= PORT_PCR_PE(1);
+	// Enable pull up resistor
+	PORTC->PCR[SWITCH_PIN_HEARTBEAT] &= ~PORT_PCR_PE_MASK;
+	PORTC->PCR[SWITCH_PIN_HEARTBEAT] |= PORT_PCR_PE(1);
 
-    // Configure interrupt for falling edge
-    PORTC->PCR[SWITCH_PIN_HEARTBEAT] &= ~PORT_PCR_IRQC_MASK;
-    PORTC->PCR[SWITCH_PIN_HEARTBEAT] |= PORT_PCR_IRQC(0b1010);
+	// Configure interrupt for falling edge
+	PORTC->PCR[SWITCH_PIN_HEARTBEAT] &= ~PORT_PCR_IRQC_MASK;
+	PORTC->PCR[SWITCH_PIN_HEARTBEAT] |= PORT_PCR_IRQC(0b1010);
 
-    // Set interrupt as lowest priority
-    NVIC_SetPriority(PORTC_PORTD_IRQn, 192);
+	// Set interrupt as lowest priority
+	NVIC_SetPriority(PORTC_PORTD_IRQn, 192);
 
-    // Clear existing interrupts
-    NVIC_ClearPendingIRQ(PORTC_PORTD_IRQn);
+	// Clear existing interrupts
+	NVIC_ClearPendingIRQ(PORTC_PORTD_IRQn);
 
-    // Enable interrupts
-    NVIC_EnableIRQ(PORTC_PORTD_IRQn);
+	// Enable interrupts
+	NVIC_EnableIRQ(PORTC_PORTD_IRQn);
 }
 
 /*
@@ -131,8 +143,5 @@ void Button_Init(int priority)
 	heartbeat_button_init();
 
 	buttonSem = xSemaphoreCreateBinary();
-	xTaskCreate(buttonTask, "button", configMINIMAL_STACK_SIZE+100, NULL, 2, NULL);
-
-
+	xTaskCreate(button_task, "button", configMINIMAL_STACK_SIZE + 100, NULL, 2, NULL);
 }
-

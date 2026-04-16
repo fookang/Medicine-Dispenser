@@ -7,7 +7,7 @@
 
 static ServoPosition servoState;
 
-static void startPWM(void)
+static void start_PWM(void)
 {
     TPM1->SC |= TPM_SC_CMOD(0b1);
 }
@@ -15,21 +15,25 @@ static void startPWM(void)
 /*
  * @brief Sets the PWM value for the servo based on its position.
  */
-static void setPWM(ServoPosition pos)
+static void set_PWM(ServoPosition pos)
 {
     switch (pos)
     {
-        case (OPEN):
-            TPM1->CONTROLS[SERVO1_CHANNEL].CnV = OPEN_PWM;
-            break;
-        case (CLOSE):
-            TPM1->CONTROLS[SERVO1_CHANNEL].CnV = CLOSE_PWM;
-            break;
-        default:
-            TPM1->CONTROLS[SERVO1_CHANNEL].CnV = CLOSE_PWM;
+    case (OPEN):
+        TPM1->CONTROLS[SERVO1_CHANNEL].CnV = OPEN_PWM;
+        break;
+    case (CLOSE):
+        TPM1->CONTROLS[SERVO1_CHANNEL].CnV = CLOSE_PWM;
+        break;
+    default:
+        TPM1->CONTROLS[SERVO1_CHANNEL].CnV = CLOSE_PWM;
     }
 }
 
+/*
+ * Initializes the servo by configuring the TPM1 module for PWM generation
+ * and setting the initial position to closed.
+ */
 void Servo_Init(void)
 {
     // Turn on clock gating to TPM1
@@ -70,34 +74,34 @@ void Servo_Init(void)
 
     TPM1->CONTROLS[SERVO1_CHANNEL].CnV = CLOSE_PWM;
     servoState = CLOSE;
-    setPWM(servoState);
+    set_PWM(servoState);
 
-    startPWM();
+    start_PWM();
 }
 
 /*
  * @brief Toggles the servo between open and closed positions.
  */
-void toggleServo(void)
+void toggle_servo(void)
 {
     servoState = (servoState == CLOSE) ? OPEN : CLOSE;
-    setPWM(servoState);
+    set_PWM(servoState);
 }
 
 /*
  * @brief Opens the servo by setting it to the OPEN position.
  */
-void openServo(void)
+void open_servo(void)
 {
     servoState = OPEN;
-    setPWM(servoState);
+    set_PWM(servoState);
 }
 
 /*
  * @brief Closes the servo by setting it to the CLOSE position.
  */
-void closeServo(void)
+void close_servo(void)
 {
     servoState = CLOSE;
-    setPWM(servoState);
+    set_PWM(servoState);
 }

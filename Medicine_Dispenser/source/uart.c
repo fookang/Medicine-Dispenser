@@ -127,16 +127,15 @@ static void recvTask(void *arg)
 				switch (packet.command)
 				{
 				case SERVO_OPEN:
-					openServo();
+					open_servo();
 					break;
 
 				case SERVO_CLOSE:
-					closeServo();
+					close_servo();
 					break;
 
 				default:
 					// Dont do anything
-
 				}
 			}
 			else if (packet.device_type == HB_SENSOR_DEV)
@@ -149,7 +148,6 @@ static void recvTask(void *arg)
 
 				default:
 					// Dont do anything
-
 				}
 			}
 		}
@@ -166,7 +164,9 @@ void UART2_FLEXIO_IRQHandler(void)
 	static uint8_t receiving = 0;
 
 	NVIC_ClearPendingIRQ(UART2_FLEXIO_IRQn);
-	if (UART2->S1 & UART_S1_TDRE_MASK) // Send data
+
+	/* Send data */
+	if (UART2->S1 & UART_S1_TDRE_MASK)
 	{
 		if (send_ptr >= sizeof(TPacket))
 		{
@@ -189,6 +189,7 @@ void UART2_FLEXIO_IRQHandler(void)
 		}
 	}
 
+	/* Receive data */
 	if (UART2->S1 & UART_S1_RDRF_MASK)
 	{
 		// Read Data to buffer
@@ -234,18 +235,18 @@ void UART2_FLEXIO_IRQHandler(void)
  * Set up interrupts and semaphores for sending and receiving data.
  * Creates FreeRTOS tasks for handling sending and receiving of UART data.
  */
-void init_uart(int recvPriority, int sendPriority)
+void Uart_Init(int recvPriority, int sendPriority)
 {
 	NVIC_DisableIRQ(UART2_FLEXIO_IRQn);
 
-	// enable clock to UART2 and PORTE
+	// Enable clock to UART2 and PORTE
 	SIM->SCGC4 |= SIM_SCGC4_UART2_MASK;
 	SIM->SCGC5 |= SIM_SCGC5_PORTE_MASK;
 
 	// Ensure Tx and Rx are disabled before configuration
 	UART2->C2 &= ~((UART_C2_TE_MASK) | (UART_C2_RE_MASK));
 
-	// connect UART pins for PTE22, PTE23
+	// Connect UART pins for PTE22, PTE23
 	PORTE->PCR[UART_TX] &= ~PORT_PCR_MUX_MASK;
 	PORTE->PCR[UART_TX] |= PORT_PCR_MUX(4);
 
@@ -268,7 +269,7 @@ void init_uart(int recvPriority, int sendPriority)
 	UART2->C1 &= ~UART_C1_LOOPS_MASK;
 	UART2->C1 &= ~UART_C1_RSRC_MASK;
 
-	// Disable parity2
+	// Disable parity
 	UART2->C1 &= ~UART_C1_PE_MASK;
 
 	// 8-bit mode

@@ -19,6 +19,9 @@ static uint32_t BUZZER_PERIOD_MS = 24 * 60 * 60 * 1000;
 
 static volatile int buzzerActive = 0;
 
+/*
+ * Timer callback to wake the buzzer task.
+ */
 static void buzzerTimerCallback(TimerHandle_t xTimer)
 {
     (void)xTimer;
@@ -26,7 +29,10 @@ static void buzzerTimerCallback(TimerHandle_t xTimer)
     xSemaphoreGive(buzzerSem);
 }
 
-static void buzzerTask(void *arg)
+/*
+ * Task to handle buzzer beeping.
+ */
+static void buzzer_task(void *arg)
 {
     (void)arg;
 
@@ -45,7 +51,6 @@ static void buzzerTask(void *arg)
         }
     }
 }
-
 
 /*
  *Configures buzzer GPIO and creates buzzer task and semaphore.
@@ -69,10 +74,10 @@ void Buzzer_Init(int priority)
     buzzerSem = xSemaphoreCreateBinary();
 
     // Create buzzer task
-    xTaskCreate(buzzerTask, "buzzer", configMINIMAL_STACK_SIZE + 100, NULL, priority, NULL);
+    xTaskCreate(buzzer_task, "buzzer", configMINIMAL_STACK_SIZE + 100, NULL, priority, NULL);
 
     // Create buzzer timer
-    buzzerTimer = xTimerCreate("Timer", pdMS_TO_TICKS(BUZZER_PERIOD_MS), pdTRUE, (void*) 0, buzzerTimerCallback);
+    buzzerTimer = xTimerCreate("Timer", pdMS_TO_TICKS(BUZZER_PERIOD_MS), pdTRUE, (void *)0, buzzerTimerCallback);
 
     // Check if timer is properly initialised
     if (buzzerTimer == NULL)
@@ -123,7 +128,7 @@ void buzzer_stop(void)
     buzzerActive = false;
 }
 
-/* 
+/*
  * Change auto-buzz interval while system is running
  *
  * Not use in current iteration
@@ -138,6 +143,6 @@ BaseType_t buzzer_set_period_ms(uint32_t newPeriodMs)
     BUZZER_PERIOD_MS = newPeriodMs;
 
     return xTimerChangePeriod(buzzerTimer,
-            pdMS_TO_TICKS(newPeriodMs),
-            portMAX_DELAY);
+                              pdMS_TO_TICKS(newPeriodMs),
+                              portMAX_DELAY);
 }

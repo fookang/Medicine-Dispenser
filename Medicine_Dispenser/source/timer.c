@@ -43,7 +43,7 @@ static void init_timer0(void)
  * Configures and starts TPM0 so modules (for example ultrasonic and DHT)
  * can use a common 1 us-resolution counter for short timing operations.
  */
-void Init_Timer(void)
+void Timer_Init(void)
 {
     init_timer0();
     start_timer0();

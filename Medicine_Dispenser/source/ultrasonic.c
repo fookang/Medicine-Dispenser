@@ -76,18 +76,18 @@ static void ultrasonic_task(void *arg)
 
             if (!servoOpen && distance_cm < 10)
             {
-                openServo();
+                open_servo();
                 servoOpen = 1;
             }
             else if (servoOpen && distance_cm > 15)
             {
-                closeServo();
+                close_servo();
                 servoOpen = 0;
             }
         }
         else
         {
-            closeServo();
+            close_servo();
         }
         vTaskDelay(pdMS_TO_TICKS(50));
     }
@@ -183,7 +183,7 @@ static void init_echo_pin(void)
 /*
  *Configures ultrasonic GPIO, TIM0 and creates buzzer task and semaphore.
  */
-void ultrasonic_init(int priority)
+void Ultrasonic_Init(int priority)
 {
     ultraSem = xSemaphoreCreateBinary();
     init_trig_pin();

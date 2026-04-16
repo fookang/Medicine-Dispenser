@@ -16,11 +16,9 @@
 #include "pin_mux.h"
 #include "clock_config.h"
 #include "fsl_debug_console.h"
-/* TODO: insert other include files here. */
+
 #include "timer.h"
 #include "freertos_init.h"
-
-/* TODO: insert other definitions and declarations here. */
 
 void setMCGIRClk()
 {
@@ -69,7 +67,7 @@ int main(void)
 
     Init_Clk();
     SystemCoreClockUpdate();
-    Init_Timer();
+    Timer_Init();
     FreeRTOS_Init();
 
     /* Force the counter to be placed into memory. */
