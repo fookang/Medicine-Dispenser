@@ -1,6 +1,41 @@
-# Medicine Dispenser — Port Reference
+# Medicine Dispenser
 
-Quick pin/port mapping for this firmware (MCXC444).
+This project is an embedded medicine dispenser built around two controllers:
+an MCXC444 board that drives the hardware, and an ESP32-S2 that provides the user-facing
+interface and network features.
+
+The MCXC444 firmware handles the physical dispenser logic: buttons, buzzer, servo,
+ultrasonic sensing, DHT11 input, and heartbeat sensing. The ESP32-S2 acts as a companion
+controller that relays commands over UART, shows heart-rate values on an OLED display,
+and forwards alerts to Telegram.
+
+## Project Overview
+
+The two boards communicate using a simple packet format over UART2 at 9600 baud.
+Packets include a magic byte for framing, a device type, a command, and data payload.
+The ESP32 can request a heart-rate reading from the MCXC444, while the MCU can report
+sense data and trigger hardware actions such as the servo or buzzer.
+
+## What This Repository Contains
+
+- `Medicine_Dispenser/`: MCXC444 firmware project
+- `ESP32/`: ESP32-S2 controller project
+- `Diagram/`: architecture diagram for the system
+
+## Runtime Responsibilities
+
+- Button input on the MCXC444 for local control
+- Servo control for dispenser movement
+- Buzzer alerts for user feedback
+- Ultrasonic sensing for distance detection
+- DHT11 temperature and humidity reading
+- Heartbeat sensing through ADC input
+- UART communication with the ESP32-S2
+
+## Hardware Reference
+
+The tables below are a quick hardware reference for the main pins, interrupts, timers,
+and UART settings used by the code.
 
 ## GPIO / Peripheral Pin Map
 
